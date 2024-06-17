@@ -28,8 +28,15 @@ class AdminController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'message' => ['required', 'string'],
         ]);
-        Mail::to("ir-masimango@silasmas.com")->send(new message($request->email, $request->nom, $request->subject, $request->message, $request->phone));
-        return back()->with('msg', "Votre message est envoyer avec succès!");
+
+        $ret = Mail::to("ir-masimango@silasmas.com")->send(new message($request->email, $request->nom, $request->subject, $request->message, $request->phone));
+
+        if ($ret) {
+            return response()->json(['reponse' => true, 'msg' => "Votre message est envoyer avec succès!"]);
+        } else {
+            return response()->json(['reponse' => false, 'msg' => "Erreur d'envoi de message."]);
+
+        }
     }
     // ==================================== HTTP GET METHODS ====================================
     /**
