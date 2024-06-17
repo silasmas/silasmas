@@ -51,3 +51,4 @@
         <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
         <script async src='https://stackwhats.com/pixel/a1d290565dc8bd3570b1c86106085f'></script>
         @include("parties.pied")
+

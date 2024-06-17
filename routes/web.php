@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Web\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'App\Http\Controllers\Web\HomeController@index')->name('home');
 Route::get('/symlink', 'App\Http\Controllers\Web\HomeController@symlink')->name('symlink');
 Route::get('/detail/{id}', 'App\Http\Controllers\Web\HomeController@detail')->name('detail');
+Route::post('addNewMessage', [AdminController::class, 'sendMessage'])->name('addNewMessage');
 
 // Administration
 Route::middleware('auth')->group(function () {
