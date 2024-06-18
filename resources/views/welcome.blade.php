@@ -8,8 +8,8 @@
                 <h1>Silas Développe</h1>
                 <p>Expertise en <span class="typed" data-typed-items="Programmation, Dévelopement Web et Mobile, Design, Community Management"></span></p>
                 <div class="social-links">
-                    <a href="#" class="facebook"><i class="bx bxl-facebook"></i></a>
-                    <a href="#" class="twitter"><i class="bx bxl-twitter"></i></a>
+                    {{-- <a href="#" class="facebook"><i class="bx bxl-facebook"></i></a>
+                    <a href="#" class="twitter"><i class="bx bxl-twitter"></i></a> --}}
                 </div>
             </div>
         </section><!-- End Hero -->
