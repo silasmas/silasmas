@@ -6,8 +6,11 @@
     "predev": "kill-port 3000",
     "dev": "next dev --port 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "eslint"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "next": "16.2.7",
