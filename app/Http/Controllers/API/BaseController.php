@@ -15,9 +15,10 @@ class BaseController extends Controller
      *
      * @param  $result
      * @param  $msg
+     * @param  int  $code
      * @return \Illuminate\Http\Response
      */
-    public function handleResponse($result, $msg)
+    public function handleResponse($result, $msg, $code = 200)
     {
         $res = [
             'success' => true,
@@ -25,7 +26,7 @@ class BaseController extends Controller
             'data'    => $result
         ];
 
-        return response()->json($res, 200);
+        return response()->json($res, $code);
     }
 
     /**

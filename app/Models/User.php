@@ -2,71 +2,76 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * @author Xanders
- * @see https://www.linkedin.com/in/xanders-samoth-b2770737/
+ * Utilisateur (équipe SDEV et accès admin Filament).
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
-    use HasApiTokens, HasFactory, Notifiable;
+  use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $guarded = [];
+  protected $guarded = [];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+  protected $hidden = [
+    'password',
+    'remember_token',
+  ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+  protected $casts = [
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'birthdate' => 'date',
+  ];
 
-    /**
-     * MANY-TO-MANY
-     * Several roles for several users
-     */
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
+  /**
+   * Nom affiché dans Filament et l'interface.
+   */
+  public function getNameAttribute(): string
+  {
+    $fullName = trim("{$this->firstname} {$this->lastname}");
+
+    return $fullName !== '' ? $fullName : (string) ($this->email ?? $this->phone ?? 'Utilisateur');
+  }
+
+  /**
+   * Détermine si l'utilisateur peut accéder au panneau admin.
+   */
+  public function canAccessPanel(Panel $panel): bool
+  {
+    if ($panel->getId() !== 'admin') {
+      return false;
     }
 
-    /**
-     * ONE-TO-MANY
-     * One status for several users
-     */
-    public function status()
-    {
-        return $this->belongsTo(Status::class);
-    }
+    return $this->roles()->where('role_name', 'Administrateur')->exists();
+  }
 
-    /**
-     * MANY-TO-ONE
-     * Several projects for a user
-     */
-    public function projects()
-    {
-        return $this->hasMany(Project::class);
-    }
+  /**
+   * Rôles (relation N-N).
+   */
+  public function roles()
+  {
+    return $this->belongsToMany(Role::class);
+  }
+
+  /**
+   * Statut de l'utilisateur.
+   */
+  public function status()
+  {
+    return $this->belongsTo(Status::class);
+  }
+
+  /**
+   * Projets associés à l'utilisateur.
+   */
+  public function projects()
+  {
+    return $this->hasMany(Project::class);
+  }
 }

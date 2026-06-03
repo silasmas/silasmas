@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Academy\AcademyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,19 @@ Route::apiResource('role', 'App\Http\Controllers\API\RoleController');
 Route::apiResource('status', 'App\Http\Controllers\API\StatusController');
 Route::apiResource('user', 'App\Http\Controllers\API\UserController');
 Route::apiResource('website', 'App\Http\Controllers\API\WebsiteController');
+
+/*
+|--------------------------------------------------------------------------
+| SDev Academy (API publique pour le front Next.js)
+|--------------------------------------------------------------------------
+ */
+Route::prefix('academy')->group(function () {
+    Route::get('sessions', [AcademyController::class, 'sessions'])->name('academy.sessions.index');
+    Route::get('sessions/{slug}', [AcademyController::class, 'showSession'])->name('academy.sessions.show');
+    Route::post('register', [AcademyController::class, 'register'])->name('academy.register');
+});
+
+Route::post('contact', [\App\Http\Controllers\API\ContactController::class, 'store'])->name('contact.store');
 
 /*
 |--------------------------------------------------------------------------
