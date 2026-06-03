@@ -10,7 +10,8 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
 /**
- * Construit l'URL absolue d'un asset stocké côté Laravel.
+ * Construit l'URL absolue d'un asset stocké côté Laravel (/storage/...).
+ * Les chemins locaux Next.js (/images/...) restent relatifs.
  */
 export function resolveStorageUrl(path?: string | null): string | null {
   if (!path) {
@@ -21,8 +22,17 @@ export function resolveStorageUrl(path?: string | null): string | null {
     return path;
   }
 
-  const apiRoot = API_BASE.replace(/\/api\/?$/, "");
-  return `${apiRoot}${path.startsWith("/") ? path : `/${path}`}`;
+  if (path.startsWith("/images/")) {
+    return path;
+  }
+
+  if (path.startsWith("/storage/") || path.startsWith("storage/")) {
+    const apiRoot = API_BASE.replace(/\/api\/?$/, "");
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${apiRoot}${normalizedPath}`;
+  }
+
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
 /**
