@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\AdminController;
+use App\Http\Controllers\Web\DeployController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -10,6 +11,13 @@ use Illuminate\Support\Facades\Route;
  */
 Route::get('/', 'App\Http\Controllers\Web\HomeController@index')->name('home');
 Route::get('/symlink', 'App\Http\Controllers\Web\HomeController@symlink')->name('symlink');
+
+/*
+|--------------------------------------------------------------------------
+| Déploiement (Hostinger sans SSH) — protégé par DEPLOY_SECRET
+|--------------------------------------------------------------------------
+ */
+Route::get('/deploy/migrate', [DeployController::class, 'migrate'])->name('deploy.migrate');
 Route::get('/detail/{id}', 'App\Http\Controllers\Web\HomeController@detail')->name('detail');
 Route::post('addNewMessage', [AdminController::class, 'sendMessage'])->name('addNewMessage');
 
