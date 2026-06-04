@@ -1,8 +1,14 @@
 import type {
   ApiResponse,
+  CheckPaymentStatusResponse,
   ContactPayload,
+  ProcessPaymentPayload,
+  ProcessPaymentResponse,
   Project,
+  ParticipantSpace,
   RegistrationPayload,
+  RegistrationResult,
+  SiteContent,
   TrainingSession,
 } from "@/types/api";
 
@@ -18,21 +24,63 @@ export function resolveStorageUrl(path?: string | null): string | null {
     return null;
   }
 
-  if (path.startsWith("http")) {
-    return path;
+  const trimmed = path.trim();
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
 
-  if (path.startsWith("/images/")) {
-    return path;
+  if (trimmed.startsWith("/images/")) {
+    return trimmed;
   }
 
-  if (path.startsWith("/storage/") || path.startsWith("storage/")) {
-    const apiRoot = API_BASE.replace(/\/api\/?$/, "");
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const apiRoot = API_BASE.replace(/\/api\/?$/, "");
+
+  if (trimmed.startsWith("/storage/") || trimmed.startsWith("storage/")) {
+    const normalizedPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
     return `${apiRoot}${normalizedPath}`;
   }
 
-  return path.startsWith("/") ? path : `/${path}`;
+  if (trimmed.startsWith("/assets/") || trimmed.startsWith("assets/")) {
+    const normalizedPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    return `${apiRoot}${normalizedPath}`;
+  }
+
+  if (!trimmed.startsWith("/")) {
+    return `${apiRoot}/storage/${trimmed.replace(/^\/+/, "")}`;
+  }
+
+  return `${apiRoot}${trimmed}`;
+}
+
+/**
+ * URL d'affiche session (API renvoie souvent une URL absolue).
+ */
+export function sessionCoverUrl(session: {
+  cover_image?: string | null;
+  cover_image_url?: string | null;
+}): string | null {
+  return resolveStorageUrl(session.cover_image_url ?? session.cover_image);
+}
+
+/**
+ * Récupère le contenu dynamique du site (à propos, services, compétences).
+ */
+export async function getSiteContent(): Promise<SiteContent | null> {
+  try {
+    const response = await fetch(`${API_BASE}/site`, {
+      next: { revalidate: 120 },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json: ApiResponse<SiteContent> = await response.json();
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -56,12 +104,12 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 /**
- * Récupère les sessions Academy mises en avant.
+ * Récupère les sessions Academy avec inscriptions ouvertes (status = open).
  */
-export async function getFeaturedSessions(): Promise<TrainingSession[]> {
+export async function getOpenSessions(): Promise<TrainingSession[]> {
   try {
     const response = await fetch(
-      `${API_BASE}/academy/sessions?featured_only=1&open_only=1`,
+      `${API_BASE}/academy/sessions?open_only=1`,
       { next: { revalidate: 60 } }
     );
 
@@ -74,6 +122,13 @@ export async function getFeaturedSessions(): Promise<TrainingSession[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * @deprecated Utiliser getOpenSessions() + pickPrimarySession()
+ */
+export async function getFeaturedSessions(): Promise<TrainingSession[]> {
+  return getOpenSessions();
 }
 
 /**
@@ -103,7 +158,7 @@ export async function getSessionBySlug(
  */
 export async function submitRegistration(
   payload: RegistrationPayload
-): Promise<ApiResponse<unknown>> {
+): Promise<ApiResponse<RegistrationResult>> {
   const response = await fetch(`${API_BASE}/academy/register`, {
     method: "POST",
     headers: {
@@ -114,6 +169,92 @@ export async function submitRegistration(
   });
 
   return response.json();
+}
+
+/**
+ * Lance le paiement (Mobile Money ou carte) pour une inscription.
+ */
+export async function processAcademyPayment(
+  payload: ProcessPaymentPayload
+): Promise<ApiResponse<ProcessPaymentResponse>> {
+  const response = await fetch(`${API_BASE}/academy/payments/process`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response.json();
+}
+
+/**
+ * Vérifie le statut d'un paiement Mobile Money (polling).
+ */
+export async function checkAcademyPaymentStatus(
+  reference: string
+): Promise<ApiResponse<CheckPaymentStatusResponse>> {
+  const response = await fetch(
+    `${API_BASE}/academy/payments/check-status?reference=${encodeURIComponent(reference)}`,
+    { headers: { Accept: "application/json" } }
+  );
+
+  return response.json();
+}
+
+/**
+ * Charge l'espace participant via jeton d'accès.
+ */
+export async function getParticipantSpace(
+  token: string
+): Promise<ParticipantSpace | null> {
+  try {
+    const response = await fetch(`${API_BASE}/academy/participant/${token}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json: ApiResponse<ParticipantSpace> = await response.json();
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Enregistre l'acceptation de la notice de confidentialité.
+ */
+export async function acceptParticipantConfidentiality(
+  token: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${API_BASE}/academy/participant/${token}/accept-confidentiality`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * URL front de l'espace participant.
+ */
+export function buildParticipantUrl(token: string): string {
+  const site =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+
+  return `${site}/academy/espace/${token}`;
 }
 
 /**

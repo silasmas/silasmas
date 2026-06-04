@@ -6,6 +6,7 @@ use App\Filament\Resources\TrainingSessionResource\Pages;
 use App\Models\TrainingSession;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -98,13 +99,117 @@ class TrainingSessionResource extends Resource
             Forms\Components\Toggle::make('is_featured')
               ->label('Mettre en avant'),
             Forms\Components\FileUpload::make('cover_image')
-              ->label('Visuel')
+              ->label('Affiche')
               ->image()
               ->disk('public')
               ->directory('images/academy/sessions')
-              ->visibility('public'),
+              ->visibility('public')
+              ->maxFiles(1)
+              ->imageEditor(),
           ])
           ->columns(2),
+        Forms\Components\Section::make('Tarification')
+          ->description('Session gratuite ou payante (prix affiché sur le site et exigé à l\'inscription).')
+          ->schema([
+            Forms\Components\Toggle::make('is_free')
+              ->label('Session gratuite')
+              ->default(true)
+              ->live(),
+            Forms\Components\TextInput::make('price')
+              ->label('Prix')
+              ->numeric()
+              ->minValue(0.01)
+              ->step(0.01)
+              ->visible(fn (Get $get): bool => ! $get('is_free'))
+              ->required(fn (Get $get): bool => ! $get('is_free')),
+            Forms\Components\Select::make('currency')
+              ->label('Devise')
+              ->options([
+                'USD' => 'USD — Dollar',
+                'CDF' => 'CDF — Franc congolais',
+                'EUR' => 'EUR — Euro',
+              ])
+              ->default('USD')
+              ->visible(fn (Get $get): bool => ! $get('is_free'))
+              ->required(fn (Get $get): bool => ! $get('is_free')),
+          ])
+          ->columns(2),
+        Forms\Components\Section::make('Vidéo spot')
+          ->schema([
+            Forms\Components\Select::make('spot_video_type')
+              ->label('Type de vidéo')
+              ->options([
+                'none' => 'Aucune',
+                'file' => 'Fichier (MP4)',
+                'youtube' => 'YouTube',
+                'vimeo' => 'Vimeo',
+              ])
+              ->default('none')
+              ->live()
+              ->required(),
+            Forms\Components\FileUpload::make('spot_video')
+              ->label('Fichier vidéo')
+              ->disk('public')
+              ->directory('videos/academy/sessions')
+              ->visibility('public')
+              ->acceptedFileTypes(['video/mp4', 'video/webm'])
+              ->maxFiles(1)
+              ->visible(fn (Get $get): bool => $get('spot_video_type') === 'file'),
+            Forms\Components\TextInput::make('spot_video_external_url')
+              ->label('URL YouTube / Vimeo')
+              ->url()
+              ->maxLength(500)
+              ->visible(fn (Get $get): bool => in_array($get('spot_video_type'), ['youtube', 'vimeo'], true))
+              ->columnSpanFull(),
+          ])
+          ->columns(2),
+        Forms\Components\Section::make('Notifications participants')
+          ->description('Canaux proposés à l\'inscription ; rappels automatiques la veille du début.')
+          ->schema([
+            Forms\Components\Toggle::make('notify_by_email')
+              ->label('Proposer l\'e-mail')
+              ->default(true),
+            Forms\Components\Toggle::make('notify_by_sms')
+              ->label('Proposer le SMS')
+              ->default(false),
+            Forms\Components\Toggle::make('notify_by_whatsapp')
+              ->label('Proposer WhatsApp')
+              ->default(false),
+          ])
+          ->columns(3),
+        Forms\Components\Section::make('Espace participant & ressources')
+          ->schema([
+            Forms\Components\Textarea::make('participant_benefits')
+              ->label('Droits / avantages affichés')
+              ->rows(4)
+              ->helperText('Texte visible dans l\'espace participant (accès, support, certificat, etc.).')
+              ->columnSpanFull(),
+            Forms\Components\Textarea::make('confidentiality_notice')
+              ->label('Notice de confidentialité')
+              ->rows(6)
+              ->helperText('Affichée dans une modale avant d\'ouvrir une ressource.')
+              ->columnSpanFull(),
+            Forms\Components\Repeater::make('session_resources')
+              ->label('Ressources de la session')
+              ->schema([
+                Forms\Components\TextInput::make('title')
+                  ->label('Titre')
+                  ->required()
+                  ->maxLength(255),
+                Forms\Components\TextInput::make('url')
+                  ->label('Lien')
+                  ->url()
+                  ->required()
+                  ->maxLength(500),
+                Forms\Components\Textarea::make('description')
+                  ->label('Description courte')
+                  ->rows(2)
+                  ->maxLength(500),
+              ])
+              ->columns(2)
+              ->columnSpanFull()
+              ->defaultItems(0),
+          ]),
       ]);
   }
 
@@ -115,6 +220,11 @@ class TrainingSessionResource extends Resource
   {
     return $table
       ->columns([
+        Tables\Columns\ImageColumn::make('cover_image')
+          ->label('Affiche')
+          ->disk('public')
+          ->height(56)
+          ->square(),
         Tables\Columns\TextColumn::make('title')
           ->label('Titre')
           ->searchable()
@@ -149,6 +259,15 @@ class TrainingSessionResource extends Resource
         Tables\Columns\IconColumn::make('is_featured')
           ->label('Vedette')
           ->boolean(),
+        Tables\Columns\TextColumn::make('price')
+          ->label('Tarif')
+          ->formatStateUsing(function ($state, TrainingSession $record): string {
+            if ($record->is_free ?? true) {
+              return 'Gratuit';
+            }
+
+            return number_format((float) $state, 2).' '.($record->currency ?? 'USD');
+          }),
       ])
       ->defaultSort('start_date', 'desc')
       ->filters([

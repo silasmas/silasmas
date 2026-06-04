@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EXPERTISE_ITEMS } from "@/data/site";
+
+interface HeroSectionProps {
+  taglines: string[];
+}
 
 /**
- * Section hero avec animation des expertises.
+ * Section hero avec animation des expertises (contenu dynamique API).
  */
-export function HeroSection() {
+export function HeroSection({ taglines }: HeroSectionProps) {
+  const items = taglines.length > 0 ? taglines : ["Solutions numériques"];
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setIndex((current) => (current + 1) % EXPERTISE_ITEMS.length);
+      setIndex((current) => (current + 1) % items.length);
     }, 2500);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [items.length]);
 
   return (
     <section id="hero" className="relative min-h-[92vh] overflow-hidden">
@@ -28,11 +32,9 @@ export function HeroSection() {
           <h1 className="section-title">
             Silas <span className="text-gold">Développe</span>
           </h1>
-          <p className="mb-8 max-w-xl text-lg text-slate-300">
+          <p className="mb-8 max-w-xl text-lg text-muted">
             Expertise en{" "}
-            <span className="font-semibold text-amber-400">
-              {EXPERTISE_ITEMS[index]}
-            </span>
+            <span className="font-semibold text-accent">{items[index]}</span>
           </p>
           <div className="flex flex-wrap gap-4">
             <a href="#portfolio" className="btn btn-gold btn-lg">
@@ -48,13 +50,16 @@ export function HeroSection() {
           <div className="glass relative overflow-hidden rounded-3xl p-8">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent" />
             <div className="relative space-y-4">
-              <div className="rounded-2xl border border-amber-500/20 bg-black/40 p-5">
-                <p className="text-sm uppercase tracking-widest text-amber-400">SDev Academy</p>
+              <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
+                <p className="text-sm uppercase tracking-widest text-accent">SDev Academy</p>
                 <p className="mt-2 text-xl font-semibold">Formation numérique en RDC & Afrique</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {["Web & Mobile", "Design", "Marketing", "Formation IA"].map((item) => (
-                  <div key={item} className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
+                  <div
+                    key={item}
+                    className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 text-sm"
+                  >
                     {item}
                   </div>
                 ))}

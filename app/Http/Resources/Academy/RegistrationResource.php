@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Academy;
 
+use App\Support\ParticipantToken;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,7 +32,15 @@ class RegistrationResource extends JsonResource
         'slug' => $this->trainingSession->slug,
         'start_date' => $this->trainingSession->start_date?->format('Y-m-d'),
         'end_date' => $this->trainingSession->end_date?->format('Y-m-d'),
+        'is_free' => $this->trainingSession->is_free ?? true,
+        'is_paid' => $this->trainingSession->isPaid(),
       ],
+      'requires_payment' => $this->status === 'pending_payment',
+      'access_token' => $this->when($this->access_token !== null, $this->access_token),
+      'participant_url' => $this->when(
+        $this->access_token !== null,
+        fn () => ParticipantToken::frontendUrl($this->resource)
+      ),
     ];
   }
 }

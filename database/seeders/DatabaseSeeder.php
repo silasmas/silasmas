@@ -14,6 +14,9 @@ class DatabaseSeeder extends Seeder
     $this->call([
       SdevSeeder::class,
       AcademySeeder::class,
+      SiteBlockSeeder::class,
+      PortfolioProjectSeeder::class,
+      SiteSettingSeeder::class,
     ]);
   }
 }

@@ -37,6 +37,9 @@ class AcademySeeder extends Seeder
         'status' => 'open',
         'max_participants' => null,
         'is_featured' => true,
+        'is_free' => true,
+        'price' => null,
+        'currency' => 'USD',
       ]
     );
   }

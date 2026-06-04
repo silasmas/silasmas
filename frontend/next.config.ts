@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         pathname: "/storage/**",
       },
       {
+        protocol: apiOrigin.protocol.replace(":", "") as "http" | "https",
+        hostname: apiOrigin.hostname,
+        pathname: "/assets/**",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         pathname: "/storage/**",

@@ -29,7 +29,8 @@
         },
         "files": [
             "app/Helpers/formatting.php",
-            "app/Helpers/utils.php"
+            "app/Helpers/utils.php",
+            "app/Helpers/flexpay.php"
         ]
     },
     "autoload-dev": {

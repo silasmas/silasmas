@@ -2,12 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import { submitContact } from "@/lib/api";
-import { CONTACT_INFO } from "@/data/site";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 /**
  * Section contact avec formulaire branché à l'API Laravel.
  */
 export function ContactSection() {
+  const settings = useSiteSettings();
+  const phones = [settings.phone_primary, settings.phone_secondary].filter(Boolean);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -57,17 +59,17 @@ export function ContactSection() {
         <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
           <div className="space-y-6">
             <div className="glass rounded-2xl p-5">
-              <h3 className="mb-2 font-semibold text-amber-400">Adresse</h3>
-              <p className="text-slate-300">{CONTACT_INFO.address}</p>
+              <h3 className="mb-2 font-semibold text-accent">Adresse</h3>
+              <p className="text-muted">{settings.address}</p>
             </div>
             <div className="glass rounded-2xl p-5">
-              <h3 className="mb-2 font-semibold text-amber-400">E-mail</h3>
-              <p className="text-slate-300">{CONTACT_INFO.email}</p>
+              <h3 className="mb-2 font-semibold text-accent">E-mail</h3>
+              <p className="text-muted">{settings.email}</p>
             </div>
             <div className="glass rounded-2xl p-5">
-              <h3 className="mb-2 font-semibold text-amber-400">Téléphone</h3>
-              {CONTACT_INFO.phones.map((phone) => (
-                <p key={phone} className="text-slate-300">{phone}</p>
+              <h3 className="mb-2 font-semibold text-accent">Téléphone</h3>
+              {phones.map((phone) => (
+                <p key={phone} className="text-muted">{phone}</p>
               ))}
             </div>
           </div>

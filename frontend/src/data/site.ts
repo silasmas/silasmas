@@ -1,50 +1,10 @@
 import type { Project } from "@/types/api";
-
-export const EXPERTISE_ITEMS = [
-  "Programmation",
-  "Développement Web et Mobile",
-  "Design",
-  "Community Management",
-];
-
-export const SKILLS = [
-  { name: "HTML", value: 90 },
-  { name: "CSS", value: 90 },
-  { name: "JavaScript", value: 75 },
-  { name: "PHP", value: 70 },
-  { name: "Bootstrap", value: 60 },
-  { name: "Laravel", value: 75 },
-  { name: "React JS", value: 65 },
-  { name: "React Native", value: 90 },
-  { name: "Photoshop", value: 85 },
-];
-
-export const SERVICES = [
-  {
-    title: "Création site web",
-    description:
-      "Nous créons et hébergeons des sites web pour les entreprises et les personnes.",
-    icon: "globe",
-  },
-  {
-    title: "Création applis",
-    description:
-      "Nous créons des applis mobiles Android et iOS pour les entreprises et les personnes.",
-    icon: "mobile",
-  },
-  {
-    title: "Marketing",
-    description:
-      "Nous facilitons la visibilité de vos produits chez vos clients physiquement et en ligne.",
-    icon: "marketing",
-  },
-  {
-    title: "Design & Montage",
-    description:
-      "Nous concevons des affiches, des tracts, des invitations, des logos et autres.",
-    icon: "design",
-  },
-];
+export {
+  FALLBACK_ABOUT,
+  FALLBACK_HERO_TAGLINES,
+  FALLBACK_SERVICES,
+  FALLBACK_SKILLS,
+} from "@/data/site-fallbacks";
 
 /**
  * Portfolio statique de repli si l'API est vide.

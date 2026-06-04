@@ -40,6 +40,19 @@ class ProjectResource extends Resource
               ->label('Nom du projet')
               ->required()
               ->maxLength(255),
+            Forms\Components\TextInput::make('slug')
+              ->label('Slug')
+              ->maxLength(255)
+              ->unique(ignoreRecord: true),
+            Forms\Components\TextInput::make('client_name')
+              ->label('Client')
+              ->maxLength(255),
+            Forms\Components\TextInput::make('category')
+              ->label('Catégorie')
+              ->maxLength(255),
+            Forms\Components\TextInput::make('project_date')
+              ->label('Date du projet')
+              ->maxLength(100),
             Forms\Components\Textarea::make('project_description')
               ->label('Description')
               ->rows(4)
@@ -60,12 +73,21 @@ class ProjectResource extends Resource
         Forms\Components\Section::make('Liens & média')
           ->schema([
             Forms\Components\FileUpload::make('logo_url')
-              ->label('Logo')
+              ->label('Logo / vignette')
               ->image()
               ->disk('public')
               ->directory('images/projects')
               ->visibility('public')
               ->imageEditor(),
+            Forms\Components\FileUpload::make('gallery_urls')
+              ->label('Galerie')
+              ->image()
+              ->disk('public')
+              ->directory('images/projects/gallery')
+              ->visibility('public')
+              ->multiple()
+              ->reorderable()
+              ->columnSpanFull(),
             Forms\Components\TextInput::make('web_url')
               ->label('Site web')
               ->url()
@@ -78,6 +100,13 @@ class ProjectResource extends Resource
               ->label('iOS')
               ->url()
               ->maxLength(255),
+            Forms\Components\TextInput::make('sort_order')
+              ->label('Ordre')
+              ->numeric()
+              ->default(0),
+            Forms\Components\Toggle::make('is_published')
+              ->label('Publié sur le site')
+              ->default(true),
           ])
           ->columns(2),
       ]);
@@ -98,6 +127,16 @@ class ProjectResource extends Resource
           ->label('Projet')
           ->searchable()
           ->sortable(),
+        Tables\Columns\TextColumn::make('client_name')
+          ->label('Client')
+          ->toggleable(),
+        Tables\Columns\TextColumn::make('category')
+          ->label('Catégorie')
+          ->badge()
+          ->toggleable(),
+        Tables\Columns\IconColumn::make('is_published')
+          ->label('Publié')
+          ->boolean(),
         Tables\Columns\TextColumn::make('status.status_name')
           ->label('Statut')
           ->badge(),

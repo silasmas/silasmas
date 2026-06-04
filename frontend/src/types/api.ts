@@ -11,11 +11,17 @@ export interface ApiResponse<T> {
 export interface Project {
   id: number;
   project_name: string;
+  slug?: string | null;
   project_description?: string;
+  client_name?: string | null;
+  category?: string | null;
+  project_date?: string | null;
   web_url?: string | null;
   android_url?: string | null;
   ios_url?: string | null;
   logo_url?: string | null;
+  gallery_urls?: string[];
+  sort_order?: number;
 }
 
 export interface TrainingSession {
@@ -32,6 +38,126 @@ export interface TrainingSession {
   is_featured: boolean;
   accepts_registrations: boolean;
   cover_image?: string | null;
+  cover_image_url?: string | null;
+  spot_video_type?: "none" | "file" | "youtube" | "vimeo";
+  spot_video_url?: string | null;
+  spot_video_embed_url?: string | null;
+  spot_video_watch_url?: string | null;
+  spot_video_thumbnail_url?: string | null;
+  share_url?: string | null;
+  is_free?: boolean;
+  is_paid?: boolean;
+  price?: number | null;
+  currency?: string;
+  formatted_price?: string | null;
+  price_usd?: number | null;
+  price_cdf?: number | null;
+  exchange_rate_usd_cdf?: number | null;
+  notify_by_email?: boolean;
+  notify_by_sms?: boolean;
+  notify_by_whatsapp?: boolean;
+  confidentiality_notice?: string | null;
+  participant_benefits?: string | null;
+  session_resources?: SessionResourceItem[];
+}
+
+export interface SessionResourceItem {
+  title: string;
+  url: string;
+  description?: string | null;
+}
+
+export type MobileMoneyOperator = "mpesa" | "airtel" | "orange" | "afrimoney";
+
+export type PaymentChannel = "mobile_money" | "card";
+
+export interface SessionPaymentInfo {
+  reference: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+export interface RegistrationResult {
+  registration: {
+    id: number;
+    status: string;
+    requires_payment?: boolean;
+    access_token?: string;
+    participant_url?: string;
+    student: { firstname: string; lastname: string; email: string };
+    training_session: { title: string; slug: string };
+  };
+  requires_payment: boolean;
+  payment: SessionPaymentInfo | null;
+  access_token?: string;
+  participant_url?: string;
+}
+
+export interface ProcessPaymentPayload {
+  reference: string;
+  channel: PaymentChannel;
+  phone?: string;
+  mobile_operator?: MobileMoneyOperator;
+}
+
+export interface ProcessPaymentResponse {
+  reponse: boolean;
+  message?: string;
+  type?: "mobile" | "card" | "already_paid";
+  status?: number;
+  redirect_url?: string;
+  orderNumber?: string;
+}
+
+export interface CheckPaymentStatusResponse {
+  reponse: boolean;
+  status?: number;
+  confirmed?: boolean;
+  message?: string;
+  registration_status?: string;
+}
+
+export interface SiteAbout {
+  eyebrow?: string | null;
+  title: string;
+  body?: string | null;
+  secondary_body?: string | null;
+  image?: string | null;
+}
+
+export interface SiteSkill {
+  id: number;
+  name: string;
+  value: number;
+}
+
+export interface SiteService {
+  id: number;
+  title: string;
+  description?: string | null;
+  icon: string;
+}
+
+export interface SiteContent {
+  about: SiteAbout | null;
+  skills: SiteSkill[];
+  services: SiteService[];
+  hero_taglines: string[];
+  settings?: SiteSettings;
+}
+
+export interface SiteSettings {
+  site_title: string;
+  site_tagline?: string | null;
+  logo_url?: string | null;
+  favicon_url?: string | null;
+  email?: string | null;
+  phone_primary?: string | null;
+  phone_secondary?: string | null;
+  address?: string | null;
+  footer_description?: string | null;
+  usd_to_cdf_rate?: number | null;
 }
 
 export interface RegistrationPayload {
@@ -45,6 +171,40 @@ export interface RegistrationPayload {
   education_level?: string;
   motivation?: string;
   marketing_opt_in?: boolean;
+  notify_email?: boolean;
+  notify_sms?: boolean;
+  notify_whatsapp?: boolean;
+}
+
+export interface ParticipantSpace {
+  registration: {
+    id: number;
+    status: string;
+    is_confirmed: boolean;
+    confidentiality_accepted: boolean;
+  };
+  student: {
+    firstname: string;
+    lastname: string;
+    email: string;
+    phone?: string | null;
+    city?: string | null;
+    country?: string | null;
+    education_level?: string | null;
+  };
+  session: {
+    title: string;
+    slug: string;
+    subtitle?: string | null;
+    start_date: string;
+    end_date: string;
+    format: string;
+    participant_benefits?: string | null;
+    confidentiality_notice?: string | null;
+    resources: SessionResourceItem[];
+  };
+  participant_url: string;
+  countdown_target: string;
 }
 
 export interface ContactPayload {

@@ -22,7 +22,11 @@ class ProjectController extends BaseController
      */
     public function index()
     {
-        $projects = Project::orderByDesc('created_at')->get();
+        $projects = Project::query()
+            ->where('is_published', true)
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->get();
 
         return $this->handleResponse(ResourcesProject::collection($projects), 'Projets trouvés');
     }

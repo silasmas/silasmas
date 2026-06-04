@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcademyPaymentReturnController;
 use App\Http\Controllers\Web\AdminController;
 use App\Http\Controllers\Web\DeployController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,17 @@ Route::get('/deploy/seed', [DeployController::class, 'seed'])->name('deploy.seed
 Route::get('/deploy/storage-link', [DeployController::class, 'storageLink'])->name('deploy.storage-link');
 Route::get('/detail/{id}', 'App\Http\Controllers\Web\HomeController@detail')->name('detail');
 Route::post('addNewMessage', [AdminController::class, 'sendMessage'])->name('addNewMessage');
+
+/*
+|--------------------------------------------------------------------------
+| Retour paiement carte FlexPay (Academy) → redirection front Next.js
+|--------------------------------------------------------------------------
+ */
+Route::get(
+  '/academy/payment/return/{reference}/{amount}/{currency}/{status}',
+  [AcademyPaymentReturnController::class, 'handle']
+)->whereNumber('amount')
+  ->name('academy.payment.return');
 
 /*
 |--------------------------------------------------------------------------

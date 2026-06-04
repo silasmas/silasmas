@@ -36,6 +36,9 @@ class StoreRegistrationRequest extends FormRequest
       'occupation' => ['nullable', 'string', 'max:255'],
       'motivation' => ['nullable', 'string', 'max:2000'],
       'marketing_opt_in' => ['nullable', 'boolean'],
+      'notify_email' => ['nullable', 'boolean'],
+      'notify_sms' => ['nullable', 'boolean'],
+      'notify_whatsapp' => ['nullable', 'boolean'],
     ];
   }
 

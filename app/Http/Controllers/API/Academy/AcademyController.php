@@ -7,8 +7,11 @@ use App\Http\Requests\Academy\StoreRegistrationRequest;
 use App\Http\Resources\Academy\RegistrationResource;
 use App\Http\Resources\Academy\TrainingSessionResource;
 use App\Models\Registration;
+use App\Models\SessionPayment;
 use App\Models\Student;
 use App\Models\TrainingSession;
+use App\Services\AcademyRegistrationNotifier;
+use App\Support\ParticipantToken;
 use Illuminate\Http\Request;
 
 /**
@@ -22,7 +25,7 @@ class AcademyController extends BaseController
   public function sessions(Request $request)
   {
     $query = TrainingSession::query()
-      ->whereIn('status', ['open', 'closed', 'completed'])
+      ->visibleOnWeb()
       ->orderByDesc('is_featured')
       ->orderBy('start_date');
 
@@ -31,7 +34,7 @@ class AcademyController extends BaseController
     }
 
     if ($request->boolean('open_only')) {
-      $query->where('status', 'open');
+      $query->openForRegistration();
     }
 
     $sessions = $query->get();
@@ -105,30 +108,94 @@ class AcademyController extends BaseController
       ]
     );
 
+    $requiresPayment = $session->isPaid();
+    $initialStatus = $requiresPayment ? 'pending_payment' : 'confirmed';
+
+    $notifyFlags = $this->resolveNotificationFlags($request, $session);
+    $accessToken = ParticipantToken::generate();
+
     if ($existingRegistration !== null && $existingRegistration->status === 'cancelled') {
       $existingRegistration->update([
-        'status' => 'pending',
+        'status' => $initialStatus,
         'motivation' => $request->motivation,
         'source' => 'website',
         'registered_at' => now(),
+        'access_token' => $accessToken,
+        'notify_email' => $notifyFlags['notify_email'],
+        'notify_sms' => $notifyFlags['notify_sms'],
+        'notify_whatsapp' => $notifyFlags['notify_whatsapp'],
+        'confirmation_notified_at' => null,
       ]);
       $registration = $existingRegistration->fresh(['student', 'trainingSession']);
     } else {
       $registration = Registration::create([
         'student_id' => $student->id,
         'training_session_id' => $session->id,
-        'status' => 'pending',
+        'status' => $initialStatus,
         'motivation' => $request->motivation,
         'source' => 'website',
         'registered_at' => now(),
+        'access_token' => $accessToken,
+        'notify_email' => $notifyFlags['notify_email'],
+        'notify_sms' => $notifyFlags['notify_sms'],
+        'notify_whatsapp' => $notifyFlags['notify_whatsapp'],
       ]);
       $registration->load(['student', 'trainingSession']);
     }
 
-    return $this->handleResponse(
-      new RegistrationResource($registration),
-      'Inscription enregistrée avec succès. Nous vous contacterons prochainement.',
-      201
-    );
+    if (! $requiresPayment && $initialStatus === 'confirmed') {
+      app(AcademyRegistrationNotifier::class)->sendConfirmation($registration, false);
+    }
+
+    $paymentPayload = null;
+
+    if ($requiresPayment) {
+      $payment = SessionPayment::create([
+        'training_session_id' => $session->id,
+        'registration_id' => $registration->id,
+        'student_id' => $student->id,
+        'amount' => $session->registrationAmount(),
+        'currency' => $session->registrationCurrency(),
+        'status' => 'pending',
+        'reference' => generateAcademyPaymentReference(),
+      ]);
+
+      $paymentPayload = [
+        'reference' => $payment->reference,
+        'amount' => (float) $payment->amount,
+        'currency' => $payment->currency,
+        'status' => $payment->status,
+      ];
+    }
+
+    $message = $requiresPayment
+      ? 'Inscription enregistrée. Procédez au paiement pour confirmer votre place.'
+      : 'Inscription confirmée avec succès. Nous vous contacterons prochainement.';
+
+    return $this->handleResponse([
+      'registration' => new RegistrationResource($registration),
+      'requires_payment' => $requiresPayment,
+      'payment' => $paymentPayload,
+      'participant_url' => ParticipantToken::frontendUrl($registration),
+      'access_token' => $registration->access_token,
+    ], $message, 201);
+  }
+
+  /**
+   * Détermine les canaux de notification cochés par le participant.
+   *
+   * @return array{notify_email: bool, notify_sms: bool, notify_whatsapp: bool}
+   */
+  protected function resolveNotificationFlags(Request $request, TrainingSession $session): array
+  {
+    return [
+      'notify_email' => $session->notify_by_email
+        ? $request->boolean('notify_email', true)
+        : false,
+      'notify_sms' => ($session->notify_by_sms ?? false)
+        && $request->boolean('notify_sms', false),
+      'notify_whatsapp' => ($session->notify_by_whatsapp ?? false)
+        && $request->boolean('notify_whatsapp', false),
+    ];
   }
 }

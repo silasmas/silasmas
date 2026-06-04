@@ -20,6 +20,12 @@ class Project extends Model
      */
     protected $guarded = [];
 
+    protected $casts = [
+        'gallery_urls' => 'array',
+        'is_published' => 'boolean',
+        'sort_order' => 'integer',
+    ];
+
     /**
      * ONE-TO-MANY
      * One status for several projects

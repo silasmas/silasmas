@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\API\Academy\AcademyController;
+use App\Http\Controllers\API\Academy\AcademyParticipantController;
+use App\Http\Controllers\API\Academy\AcademyPaymentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,9 +26,21 @@ Route::prefix('academy')->group(function () {
     Route::get('sessions', [AcademyController::class, 'sessions'])->name('academy.sessions.index');
     Route::get('sessions/{slug}', [AcademyController::class, 'showSession'])->name('academy.sessions.show');
     Route::post('register', [AcademyController::class, 'register'])->name('academy.register');
+    Route::post('payments/process', [AcademyPaymentController::class, 'processPayment'])
+      ->name('academy.payments.process');
+    Route::get('payments/check-status', [AcademyPaymentController::class, 'checkTransactionStatus'])
+      ->name('academy.payments.check');
+    Route::post('payments/confirm', [AcademyPaymentController::class, 'confirmPayment'])
+      ->name('academy.payments.confirm');
+    Route::get('participant/{token}', [AcademyParticipantController::class, 'show'])
+      ->name('academy.participant.show');
+    Route::post('participant/{token}/accept-confidentiality', [AcademyParticipantController::class, 'acceptConfidentiality'])
+      ->name('academy.participant.accept-confidentiality');
 });
 
 Route::post('contact', [\App\Http\Controllers\API\ContactController::class, 'store'])->name('contact.store');
+
+Route::get('site', [\App\Http\Controllers\API\SiteController::class, 'index'])->name('site.index');
 
 /*
 |--------------------------------------------------------------------------

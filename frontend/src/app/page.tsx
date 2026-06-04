@@ -1,33 +1,46 @@
-import { AboutSection } from "@/components/sections/AboutSection";
-import { AcademySection } from "@/components/sections/AcademySection";
+import { Suspense } from "react";
 import { ContactSection } from "@/components/sections/ContactSection";
-import { HeroSection } from "@/components/sections/HeroSection";
-import { PortfolioSection } from "@/components/sections/PortfolioSection";
-import { ServicesSection } from "@/components/sections/ServicesSection";
-import { SkillsSection } from "@/components/sections/SkillsSection";
-import { FALLBACK_PROJECTS } from "@/data/site";
-import { getFeaturedSessions, getProjects } from "@/lib/api";
+import {
+  AcademySectionLoader,
+  PortfolioSectionLoader,
+} from "@/components/sections/loaders/DataSectionLoaders";
+import {
+  HeroSectionLoader,
+  SiteContentSectionsLoader,
+} from "@/components/sections/loaders/SiteContentLoaders";
+import {
+  AcademySectionSkeleton,
+  ContactSectionSkeleton,
+  HeroSectionSkeleton,
+  PortfolioSectionSkeleton,
+  SiteContentSkeleton,
+} from "@/components/skeleton/SectionSkeletons";
 
 /**
- * Page d'accueil SDEV — même structure que l'ancien site, design ll-academie adapté.
+ * Page d'accueil SDEV — sections streamées avec skeletons Suspense.
  */
-export default async function HomePage() {
-  const [apiProjects, sessions] = await Promise.all([
-    getProjects(),
-    getFeaturedSessions(),
-  ]);
-
-  const projects = apiProjects.length > 0 ? apiProjects : FALLBACK_PROJECTS;
-
+export default function HomePage() {
   return (
     <>
-      <HeroSection />
-      <AboutSection />
-      <SkillsSection />
-      <ServicesSection />
-      <PortfolioSection projects={projects} />
-      <AcademySection sessions={sessions} />
-      <ContactSection />
+      <Suspense fallback={<HeroSectionSkeleton />}>
+        <HeroSectionLoader />
+      </Suspense>
+
+      <Suspense fallback={<SiteContentSkeleton />}>
+        <SiteContentSectionsLoader />
+      </Suspense>
+
+      <Suspense fallback={<PortfolioSectionSkeleton />}>
+        <PortfolioSectionLoader />
+      </Suspense>
+
+      <Suspense fallback={<AcademySectionSkeleton />}>
+        <AcademySectionLoader />
+      </Suspense>
+
+      <Suspense fallback={<ContactSectionSkeleton />}>
+        <ContactSection />
+      </Suspense>
     </>
   );
 }

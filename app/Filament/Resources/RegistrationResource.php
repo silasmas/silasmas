@@ -51,6 +51,7 @@ class RegistrationResource extends Resource
           ->label('Statut')
           ->options([
             'pending' => 'En attente',
+            'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
             'cancelled' => 'Annulée',
@@ -96,12 +97,14 @@ class RegistrationResource extends Resource
           ->color(fn (string $state): string => match ($state) {
             'confirmed' => 'success',
             'pending' => 'warning',
+            'pending_payment' => 'warning',
             'waitlist' => 'info',
             'cancelled' => 'danger',
             default => 'gray',
           })
           ->formatStateUsing(fn (string $state): string => match ($state) {
             'pending' => 'En attente',
+            'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
             'cancelled' => 'Annulée',
@@ -124,6 +127,7 @@ class RegistrationResource extends Resource
           ->label('Statut')
           ->options([
             'pending' => 'En attente',
+            'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
             'cancelled' => 'Annulée',
