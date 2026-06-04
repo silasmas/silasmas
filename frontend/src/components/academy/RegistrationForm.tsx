@@ -232,7 +232,10 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
       const result = await submitRegistration(payload);
 
       if (!result.success || !result.data) {
-        setError(result.message || "Inscription impossible.");
+        setError(
+          result.message ||
+            "Inscription impossible. Vérifiez vos informations ou réessayez."
+        );
         return;
       }
 

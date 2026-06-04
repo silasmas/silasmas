@@ -159,16 +159,53 @@ export async function getSessionBySlug(
 export async function submitRegistration(
   payload: RegistrationPayload
 ): Promise<ApiResponse<RegistrationResult>> {
-  const response = await fetch(`${API_BASE}/academy/register`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
 
-  return response.json();
+  try {
+    response = await fetch(`${API_BASE}/academy/register`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return {
+      success: false,
+      message:
+        "Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez plus tard.",
+      data: null as unknown as RegistrationResult,
+    };
+  }
+
+  let json: ApiResponse<RegistrationResult> & {
+    errors?: Record<string, string[]>;
+  };
+
+  try {
+    json = await response.json();
+  } catch {
+    return {
+      success: false,
+      message: `Réponse serveur invalide (HTTP ${response.status}).`,
+      data: null as unknown as RegistrationResult,
+    };
+  }
+
+  if (!response.ok && json.success !== false) {
+    json.success = false;
+    json.message = json.message || `Erreur serveur (HTTP ${response.status}).`;
+  }
+
+  if (!json.success && json.errors) {
+    const firstError = Object.values(json.errors).flat()[0];
+    if (firstError) {
+      json.message = firstError;
+    }
+  }
+
+  return json;
 }
 
 /**
