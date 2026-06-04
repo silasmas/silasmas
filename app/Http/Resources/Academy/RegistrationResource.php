@@ -35,7 +35,8 @@ class RegistrationResource extends JsonResource
         'is_free' => $this->trainingSession->is_free ?? true,
         'is_paid' => $this->trainingSession->isPaid(),
       ],
-      'requires_payment' => $this->status === 'pending_payment',
+      'requires_payment' => $this->status === 'pending_payment' && ! $this->hasPaidPayment(),
+      'is_paid' => $this->hasPaidPayment() || $this->status === 'confirmed',
       'access_token' => $this->when($this->access_token !== null, $this->access_token),
       'participant_url' => $this->when(
         $this->access_token !== null,

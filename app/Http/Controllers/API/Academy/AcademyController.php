@@ -67,32 +67,11 @@ class AcademyController extends BaseController
   }
 
   /**
-   * Enregistre une inscription à une session Academy.
+   * Enregistre une inscription ou reprend un parcours existant (paiement / espace membre).
    */
   public function register(StoreRegistrationRequest $request)
   {
     $session = TrainingSession::where('slug', $request->training_session_slug)->firstOrFail();
-
-    if (!$session->acceptsRegistrations()) {
-      return $this->handleError(
-        'Les inscriptions pour cette session sont fermées ou complètes.',
-        [],
-        422
-      );
-    }
-
-    $existingRegistration = Registration::query()
-      ->where('training_session_id', $session->id)
-      ->whereHas('student', fn ($query) => $query->where('email', $request->email))
-      ->first();
-
-    if ($existingRegistration !== null && $existingRegistration->status !== 'cancelled') {
-      return $this->handleError(
-        'Vous êtes déjà inscrit(e) à cette session avec cette adresse e-mail.',
-        [],
-        422
-      );
-    }
 
     $student = Student::updateOrCreate(
       ['email' => $request->email],
@@ -108,14 +87,108 @@ class AcademyController extends BaseController
       ]
     );
 
+    $existingRegistration = Registration::query()
+      ->where('training_session_id', $session->id)
+      ->where('student_id', $student->id)
+      ->first();
+
+    if ($existingRegistration !== null && $existingRegistration->status !== 'cancelled') {
+      return $this->resumeExistingRegistration($request, $session, $existingRegistration);
+    }
+
+    if (! $session->acceptsRegistrations()) {
+      return $this->handleError(
+        'Les inscriptions pour cette session sont fermées ou complètes.',
+        [],
+        422
+      );
+    }
+
+    return $this->createNewRegistration($request, $session, $student, $existingRegistration);
+  }
+
+  /**
+   * Reprend une inscription existante : paiement en attente ou espace membre.
+   */
+  protected function resumeExistingRegistration(
+    StoreRegistrationRequest $request,
+    TrainingSession $session,
+    Registration $registration
+  ) {
+    $registration->load(['student', 'trainingSession', 'payments']);
+
+    if ($registration->status === 'waitlist') {
+      return $this->handleError(
+        'Vous êtes sur la liste d\'attente pour cette session. Nous vous contacterons si une place se libère.',
+        [],
+        422
+      );
+    }
+
+    $notifyFlags = $this->resolveNotificationFlags($request, $session);
+
+    $registration->update([
+      'motivation' => $request->motivation ?? $registration->motivation,
+      'notify_email' => $notifyFlags['notify_email'],
+      'notify_sms' => $notifyFlags['notify_sms'],
+      'notify_whatsapp' => $notifyFlags['notify_whatsapp'],
+    ]);
+
+    if ($registration->hasPaidPayment() && $registration->status !== 'confirmed') {
+      $registration->update(['status' => 'confirmed']);
+      $registration->refresh();
+    }
+
+    $accessToken = $registration->ensureAccessToken();
+
+    if ($registration->isFullyConfirmed() || ! $session->isPaid()) {
+      if ($registration->status !== 'confirmed') {
+        $registration->update(['status' => 'confirmed']);
+        $registration->refresh();
+      }
+
+      return $this->registrationResponse(
+        $registration,
+        false,
+        null,
+        'Vous êtes déjà inscrit(e). Accédez à votre espace formation.',
+        200,
+        'participant_space',
+        true,
+        true
+      );
+    }
+
+    $payment = $registration->resolveOpenPayment($session);
+
+    return $this->registrationResponse(
+      $registration,
+      true,
+      $this->paymentPayload($payment),
+      'Paiement en attente. Finalisez votre inscription ci-dessous.',
+      200,
+      'payment',
+      true,
+      false
+    );
+  }
+
+  /**
+   * Crée une nouvelle inscription (ou réactive une annulée).
+   */
+  protected function createNewRegistration(
+    StoreRegistrationRequest $request,
+    TrainingSession $session,
+    Student $student,
+    ?Registration $cancelledRegistration
+  ) {
     $requiresPayment = $session->isPaid();
     $initialStatus = $requiresPayment ? 'pending_payment' : 'confirmed';
-
     $notifyFlags = $this->resolveNotificationFlags($request, $session);
     $accessToken = ParticipantToken::generate();
 
-    if ($existingRegistration !== null && $existingRegistration->status === 'cancelled') {
-      $existingRegistration->update([
+    if ($cancelledRegistration !== null && $cancelledRegistration->status === 'cancelled') {
+      $cancelledRegistration->update([
         'status' => $initialStatus,
         'motivation' => $request->motivation,
         'source' => 'website',
@@ -126,7 +199,7 @@ class AcademyController extends BaseController
         'notify_whatsapp' => $notifyFlags['notify_whatsapp'],
         'confirmation_notified_at' => null,
       ]);
-      $registration = $existingRegistration->fresh(['student', 'trainingSession']);
+      $registration = $cancelledRegistration->fresh(['student', 'trainingSession']);
     } else {
       $registration = Registration::create([
         'student_id' => $student->id,
@@ -159,18 +232,54 @@ class AcademyController extends BaseController
         'status' => 'pending',
         'reference' => generateAcademyPaymentReference(),
       ]);
-
-      $paymentPayload = [
-        'reference' => $payment->reference,
-        'amount' => (float) $payment->amount,
-        'currency' => $payment->currency,
-        'status' => $payment->status,
-      ];
+      $paymentPayload = $this->paymentPayload($payment);
     }
 
     $message = $requiresPayment
       ? 'Inscription enregistrée. Procédez au paiement pour confirmer votre place.'
       : 'Inscription confirmée avec succès. Nous vous contacterons prochainement.';
+
+    return $this->registrationResponse(
+      $registration,
+      $requiresPayment,
+      $paymentPayload,
+      $message,
+      201,
+      $requiresPayment ? 'payment' : 'participant_space',
+      false,
+      ! $requiresPayment
+    );
+  }
+
+  /**
+   * Formate les données de paiement pour l'API.
+   *
+   * @return array<string, mixed>
+   */
+  protected function paymentPayload(SessionPayment $payment): array
+  {
+    return [
+      'reference' => $payment->reference,
+      'amount' => (float) $payment->amount,
+      'currency' => $payment->currency,
+      'status' => $payment->status,
+    ];
+  }
+
+  /**
+   * Réponse JSON unifiée pour inscription / reprise.
+   */
+  protected function registrationResponse(
+    Registration $registration,
+    bool $requiresPayment,
+    ?array $paymentPayload,
+    string $message,
+    int $httpCode,
+    string $resumeAction,
+    bool $alreadyRegistered,
+    bool $isPaid
+  ) {
+    $registration->loadMissing(['student', 'trainingSession']);
 
     return $this->handleResponse([
       'registration' => new RegistrationResource($registration),
@@ -178,7 +287,10 @@ class AcademyController extends BaseController
       'payment' => $paymentPayload,
       'participant_url' => ParticipantToken::frontendUrl($registration),
       'access_token' => $registration->access_token,
-    ], $message, 201);
+      'resume_action' => $resumeAction,
+      'already_registered' => $alreadyRegistered,
+      'is_paid' => $isPaid,
+    ], $message, $httpCode);
   }
 
   /**

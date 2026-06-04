@@ -78,6 +78,8 @@ export interface SessionPaymentInfo {
   status: string;
 }
 
+export type RegistrationResumeAction = "payment" | "participant_space";
+
 export interface RegistrationResult {
   registration: {
     id: number;
@@ -92,6 +94,9 @@ export interface RegistrationResult {
   payment: SessionPaymentInfo | null;
   access_token?: string;
   participant_url?: string;
+  resume_action?: RegistrationResumeAction;
+  already_registered?: boolean;
+  is_paid?: boolean;
 }
 
 export interface ProcessPaymentPayload {

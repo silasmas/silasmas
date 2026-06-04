@@ -123,6 +123,7 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
   const [showManualVerify, setShowManualVerify] = useState(false);
   const [verifyAttempts, setVerifyAttempts] = useState(0);
   const [participantToken, setParticipantToken] = useState<string | null>(null);
+  const [resumeInfo, setResumeInfo] = useState<string | null>(null);
 
   const initialFormState: FormState = {
     firstname: "",
@@ -166,6 +167,7 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
     setShowManualVerify(false);
     setVerifyAttempts(0);
     setParticipantToken(null);
+    setResumeInfo(null);
     setError(null);
     setLoading(false);
     setPolling(false);
@@ -246,10 +248,33 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
         setParticipantToken(token);
       }
 
-      if (result.data.requires_payment && result.data.payment) {
+      if (result.message) {
+        setResumeInfo(result.message);
+      }
+
+      if (
+        result.data.resume_action === "payment" &&
+        result.data.requires_payment &&
+        result.data.payment
+      ) {
         setPaymentInfo(result.data.payment);
         setVerifyAttempts(0);
         setShowManualVerify(false);
+        setStep("payment");
+        return;
+      }
+
+      if (
+        result.data.resume_action === "participant_space" ||
+        result.data.is_paid ||
+        !result.data.requires_payment
+      ) {
+        setStep("done");
+        return;
+      }
+
+      if (result.data.requires_payment && result.data.payment) {
+        setPaymentInfo(result.data.payment);
         setStep("payment");
       } else {
         setStep("done");
@@ -647,6 +672,11 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
 
       {step === "payment" && paymentInfo && (
         <form onSubmit={handlePayment} className="space-y-5">
+          {resumeInfo && (
+            <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              {resumeInfo}
+            </p>
+          )}
           <p className="text-sm text-slate-300">
             Total :{" "}
             <strong className="text-amber-300">
@@ -785,12 +815,24 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
       {step === "done" && (
         <div className="space-y-6 text-center">
           <p className="text-lg font-semibold text-green-400">
-            Inscription confirmée !
+            {resumeInfo?.includes("déjà inscrit")
+              ? "Bienvenue à nouveau !"
+              : "Inscription confirmée !"}
           </p>
           <p className="text-sm text-slate-300">
-            Merci {form.firstname}. Un e-mail de confirmation a été envoyé à{" "}
-            <strong className="text-white">{form.email}</strong> avec le lien vers
-            votre espace formation.
+            {resumeInfo?.includes("déjà inscrit") ? (
+              <>
+                Vous êtes déjà inscrit(e) à cette session avec{" "}
+                <strong className="text-white">{form.email}</strong>. Accédez à votre
+                espace pour le compte à rebours et vos ressources.
+              </>
+            ) : (
+              <>
+                Merci {form.firstname}. Un e-mail de confirmation a été envoyé à{" "}
+                <strong className="text-white">{form.email}</strong> avec le lien vers
+                votre espace formation.
+              </>
+            )}
           </p>
 
           {participantToken && (
