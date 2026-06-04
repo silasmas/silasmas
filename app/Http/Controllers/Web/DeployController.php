@@ -20,10 +20,60 @@ class DeployController extends Controller
    */
   public function migrate(Request $request): JsonResponse
   {
-    if (! config('deploy.migrate_enabled')) {
+    $authError = $this->authorizeDeployRequest($request, 'migrate');
+    if ($authError !== null) {
+      return $authError;
+    }
+
+    $exitCode = Artisan::call('migrate', ['--force' => true]);
+    $output = trim(Artisan::output());
+
+    return response()->json([
+      'success' => $exitCode === 0,
+      'exit_code' => $exitCode,
+      'output' => $output !== '' ? $output : 'Aucune migration en attente.',
+    ], $exitCode === 0 ? 200 : 500);
+  }
+
+  /**
+   * Exécute le seeder par défaut (DatabaseSeeder : SdevSeeder + AcademySeeder).
+   *
+   * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
+   * @return JsonResponse Résultat JSON avec code de sortie et sortie console
+   */
+  public function seed(Request $request): JsonResponse
+  {
+    $authError = $this->authorizeDeployRequest($request, 'seed');
+    if ($authError !== null) {
+      return $authError;
+    }
+
+    $exitCode = Artisan::call('db:seed', ['--force' => true]);
+    $output = trim(Artisan::output());
+
+    return response()->json([
+      'success' => $exitCode === 0,
+      'exit_code' => $exitCode,
+      'output' => $output !== '' ? $output : 'Seeders exécutés.',
+    ], $exitCode === 0 ? 200 : 500);
+  }
+
+  /**
+   * Vérifie que la route de déploiement est activée et que le secret est valide.
+   *
+   * @param Request $request Requête entrante
+   * @param string $action Action demandée : migrate ou seed
+   * @return JsonResponse|null Réponse d'erreur ou null si autorisé
+   */
+  private function authorizeDeployRequest(Request $request, string $action): ?JsonResponse
+  {
+    $enabledKey = $action === 'seed' ? 'deploy.seed_enabled' : 'deploy.migrate_enabled';
+    $envKey = $action === 'seed' ? 'DEPLOY_SEED_ENABLED' : 'DEPLOY_MIGRATE_ENABLED';
+
+    if (! config($enabledKey)) {
       return response()->json([
         'success' => false,
-        'message' => 'Route désactivée. Définissez DEPLOY_MIGRATE_ENABLED=true dans .env.',
+        'message' => "Route désactivée. Définissez {$envKey}=true dans .env.",
       ], 403);
     }
 
@@ -45,13 +95,6 @@ class DeployController extends Controller
       ], 401);
     }
 
-    $exitCode = Artisan::call('migrate', ['--force' => true]);
-    $output = trim(Artisan::output());
-
-    return response()->json([
-      'success' => $exitCode === 0,
-      'exit_code' => $exitCode,
-      'output' => $output !== '' ? $output : 'Aucune migration en attente.',
-    ], $exitCode === 0 ? 200 : 500);
+    return null;
   }
 }

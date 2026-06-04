@@ -18,6 +18,7 @@ Route::get('/symlink', 'App\Http\Controllers\Web\HomeController@symlink')->name(
 |--------------------------------------------------------------------------
  */
 Route::get('/deploy/migrate', [DeployController::class, 'migrate'])->name('deploy.migrate');
+Route::get('/deploy/seed', [DeployController::class, 'seed'])->name('deploy.seed');
 Route::get('/detail/{id}', 'App\Http\Controllers\Web\HomeController@detail')->name('detail');
 Route::post('addNewMessage', [AdminController::class, 'sendMessage'])->name('addNewMessage');
 
