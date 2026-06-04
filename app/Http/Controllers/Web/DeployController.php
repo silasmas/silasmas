@@ -13,6 +13,26 @@ use Illuminate\Support\Facades\Artisan;
 class DeployController extends Controller
 {
   /**
+   * Configuration des actions de déploiement (clé config + variable .env).
+   *
+   * @var array<string, array{config: string, env: string}>
+   */
+  private const DEPLOY_ACTIONS = [
+    'migrate' => [
+      'config' => 'deploy.migrate_enabled',
+      'env' => 'DEPLOY_MIGRATE_ENABLED',
+    ],
+    'seed' => [
+      'config' => 'deploy.seed_enabled',
+      'env' => 'DEPLOY_SEED_ENABLED',
+    ],
+    'storage-link' => [
+      'config' => 'deploy.storage_link_enabled',
+      'env' => 'DEPLOY_STORAGE_LINK_ENABLED',
+    ],
+  ];
+
+  /**
    * Exécute les migrations Laravel (équivalent à php artisan migrate --force).
    *
    * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
@@ -59,21 +79,50 @@ class DeployController extends Controller
   }
 
   /**
+   * Crée le lien symbolique public/storage → storage/app/public.
+   *
+   * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
+   * @return JsonResponse Résultat JSON avec code de sortie et sortie console
+   */
+  public function storageLink(Request $request): JsonResponse
+  {
+    $authError = $this->authorizeDeployRequest($request, 'storage-link');
+    if ($authError !== null) {
+      return $authError;
+    }
+
+    $exitCode = Artisan::call('storage:link');
+    $output = trim(Artisan::output());
+
+    return response()->json([
+      'success' => $exitCode === 0,
+      'exit_code' => $exitCode,
+      'output' => $output !== '' ? $output : 'Lien storage créé ou déjà existant.',
+    ], $exitCode === 0 ? 200 : 500);
+  }
+
+  /**
    * Vérifie que la route de déploiement est activée et que le secret est valide.
    *
    * @param Request $request Requête entrante
-   * @param string $action Action demandée : migrate ou seed
+   * @param string $action Action demandée : migrate, seed ou storage-link
    * @return JsonResponse|null Réponse d'erreur ou null si autorisé
    */
   private function authorizeDeployRequest(Request $request, string $action): ?JsonResponse
   {
-    $enabledKey = $action === 'seed' ? 'deploy.seed_enabled' : 'deploy.migrate_enabled';
-    $envKey = $action === 'seed' ? 'DEPLOY_SEED_ENABLED' : 'DEPLOY_MIGRATE_ENABLED';
-
-    if (! config($enabledKey)) {
+    if (! isset(self::DEPLOY_ACTIONS[$action])) {
       return response()->json([
         'success' => false,
-        'message' => "Route désactivée. Définissez {$envKey}=true dans .env.",
+        'message' => 'Action de déploiement inconnue.',
+      ], 400);
+    }
+
+    $actionConfig = self::DEPLOY_ACTIONS[$action];
+
+    if (! config($actionConfig['config'])) {
+      return response()->json([
+        'success' => false,
+        'message' => "Route désactivée. Définissez {$actionConfig['env']}=true dans .env.",
       ], 403);
     }
 
