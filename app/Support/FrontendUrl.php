@@ -20,11 +20,11 @@ class FrontendUrl
     $configured = rtrim((string) config('app.frontend_url', ''), '/');
     $appUrl = rtrim((string) config('app.url', ''), '/');
 
-    if ($configured !== '' && self::isLocalHostUrl($configured)) {
-      if (self::isLocalDevRuntime($appUrl)) {
-        return $configured;
-      }
-    } elseif ($configured !== '') {
+    if ($configured !== '' && ! self::isLocalHostUrl($configured)) {
+      return $configured;
+    }
+
+    if ($configured !== '' && self::isLocalHostUrl($configured) && self::isLocalHostUrl($appUrl)) {
       return $configured;
     }
 
@@ -32,11 +32,11 @@ class FrontendUrl
       return self::PRODUCTION_BASE;
     }
 
-    if (self::isLocalDevRuntime($appUrl)) {
-      return $configured !== '' ? $configured : 'http://localhost:3000';
+    if ($appUrl !== '' && ! self::isLocalHostUrl($appUrl)) {
+      return self::PRODUCTION_BASE;
     }
 
-    return self::PRODUCTION_BASE;
+    return $configured !== '' ? $configured : 'http://localhost:3000';
   }
 
   /**
@@ -59,21 +59,6 @@ class FrontendUrl
   protected static function isLocalHostUrl(string $url): bool
   {
     return (bool) preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?(/|$)#i', $url);
-  }
-
-  /**
-   * Indique si l'API tourne en environnement de développement local.
-   *
-   * @param string $appUrl APP_URL configurée
-   * @return bool true en dev local
-   */
-  protected static function isLocalDevRuntime(string $appUrl): bool
-  {
-    if (app()->environment('local')) {
-      return true;
-    }
-
-    return $appUrl !== '' && self::isLocalHostUrl($appUrl);
   }
 
   /**
