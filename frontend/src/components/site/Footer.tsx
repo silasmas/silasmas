@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Container } from "./Container";
 import { Logo } from "./Logo";
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
-import { getPrimaryRegistrationHref, isAcademyLaunchMode } from "@/lib/launch";
+import { isAcademyLaunchMode } from "@/lib/launch";
 import { site } from "@/lib/site";
 
 const columns = [
@@ -38,10 +38,15 @@ const columns = [
   },
 ];
 
+interface FooterProps {
+  /** Lien d'inscription résolu côté serveur (mode lancement). */
+  registrationHref?: string;
+}
+
 /**
  * Pied de page du site avec contenu dynamique (API) et navigation sdev.
  */
-export function Footer() {
+export function Footer({ registrationHref }: FooterProps) {
   const settings = useSiteSettings();
   const launchMode = isAcademyLaunchMode();
 
@@ -66,9 +71,9 @@ export function Footer() {
                 <ArrowUpRight className="size-4" />
               </Link>
             )}
-            {launchMode && (
+            {launchMode && registrationHref && (
               <Link
-                href={getPrimaryRegistrationHref()}
+                href={registrationHref}
                 className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-academy hover:text-accent"
               >
                 S&apos;inscrire à la formation

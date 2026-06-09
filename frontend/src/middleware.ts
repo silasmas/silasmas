@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  isAcademyLaunchMode,
-  LAUNCH_HIDDEN_PATHS,
-  PRIMARY_SESSION_SLUG,
-} from "@/lib/launch";
+import { isAcademyLaunchMode, LAUNCH_HIDDEN_PATHS } from "@/lib/launch";
 
 /**
  * Redirige l'accueil et les pages en construction vers la session Academy active.
@@ -15,14 +11,10 @@ export function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
-  const sessionUrl = `/academy/${PRIMARY_SESSION_SLUG}`;
+  const academyHubUrl = "/academy";
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(sessionUrl, request.url));
-  }
-
-  if (pathname === "/academy") {
-    return NextResponse.redirect(new URL(sessionUrl, request.url));
+    return NextResponse.redirect(new URL(academyHubUrl, request.url));
   }
 
   const isHidden = LAUNCH_HIDDEN_PATHS.some(
@@ -31,7 +23,7 @@ export function middleware(request: NextRequest) {
   );
 
   if (isHidden) {
-    return NextResponse.redirect(new URL(sessionUrl, request.url));
+    return NextResponse.redirect(new URL(academyHubUrl, request.url));
   }
 
   return NextResponse.next();

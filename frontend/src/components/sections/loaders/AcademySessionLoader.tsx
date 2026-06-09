@@ -1,11 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AcademySessionRegistration } from "@/components/academy/AcademySessionRegistration";
 import { ScrollToFormFab } from "@/components/academy/ScrollToFormFab";
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { Container } from "@/components/site/Container";
 import { Eyebrow } from "@/components/site/Eyebrow";
-import { getSessionBySlug } from "@/lib/api";
-import { isAcademyLaunchMode } from "@/lib/launch";
+import { getOpenSessions, getSessionBySlug } from "@/lib/api";
+import { isAcademyLaunchMode, resolvePrimarySessionSlug } from "@/lib/launch";
 
 interface AcademySessionLoaderProps {
   slug: string;
@@ -18,6 +18,13 @@ export async function AcademySessionLoader({ slug }: AcademySessionLoaderProps) 
   const session = await getSessionBySlug(slug);
 
   if (!session) {
+    const openSessions = await getOpenSessions();
+    const primarySlug = resolvePrimarySessionSlug(openSessions);
+
+    if (primarySlug && primarySlug !== slug) {
+      redirect(`/academy/${primarySlug}`);
+    }
+
     notFound();
   }
 

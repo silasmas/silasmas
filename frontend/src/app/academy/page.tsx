@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
@@ -11,6 +12,7 @@ import { VideoShowcase } from "@/components/site/VideoShowcase";
 import { academyTracks, faqs as staticFaqs } from "@/lib/content";
 import { getOpenSessions, getSiteContent } from "@/lib/api";
 import { mergeSiteContent } from "@/lib/site-content";
+import { isAcademyLaunchMode } from "@/lib/launch";
 import { pickPrimarySession } from "@/lib/sessions";
 import { stock } from "@/lib/stock";
 
@@ -38,6 +40,11 @@ export default async function AcademyPage() {
   const site = mergeSiteContent(await getSiteContent());
   const faqs = site.faqs.length ? site.faqs : staticFaqs;
   const primarySession = pickPrimarySession(openSessions);
+
+  if (isAcademyLaunchMode() && primarySession?.slug) {
+    redirect(`/academy/${primarySession.slug}`);
+  }
+
   const registerHref = primarySession
     ? `/academy/${primarySession.slug}`
     : "/contact";

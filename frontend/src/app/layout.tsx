@@ -12,6 +12,7 @@ import {
   getPrimaryRegistrationHref,
   getVisibleNav,
   isAcademyLaunchMode,
+  resolvePrimarySessionSlug,
 } from "@/lib/launch";
 import { pickPrimarySession } from "@/lib/sessions";
 import { site } from "@/lib/site";
@@ -89,13 +90,16 @@ export default async function RootLayout({
     getSiteContent(),
   ]);
   const primarySession = pickPrimarySession(openSessions);
+  const primarySlug = resolvePrimarySessionSlug(openSessions);
   const settings = siteContent?.settings ?? FALLBACK_SITE_SETTINGS;
   const launchMode = isAcademyLaunchMode();
-  const navItems = getVisibleNav().map((item) => ({
+  const navItems = getVisibleNav(primarySlug).map((item) => ({
     href: item.href,
     label: item.label,
   }));
-  const ctaHref = launchMode ? getPrimaryRegistrationHref() : "/contact";
+  const ctaHref = launchMode
+    ? `${getPrimaryRegistrationHref(primarySlug)}#inscription`
+    : "/contact";
   const ctaLabel = launchMode ? "S'inscrire" : "Démarrer un projet";
 
   return (
@@ -128,7 +132,11 @@ export default async function RootLayout({
               ctaLabel={ctaLabel}
             />
             <main className="flex-1">{children}</main>
-            <Footer />
+            <Footer
+              registrationHref={
+                launchMode ? getPrimaryRegistrationHref(primarySlug) : undefined
+              }
+            />
             <ActiveSessionPromoLazy session={primarySession} />
           </ThemeProvider>
         </SiteSettingsProvider>
