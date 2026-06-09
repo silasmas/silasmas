@@ -28,6 +28,7 @@ class TrainingSession extends Model
     'notify_by_sms' => 'boolean',
     'notify_by_whatsapp' => 'boolean',
     'session_resources' => 'array',
+    'registration_benefits' => 'array',
   ];
 
   /**
@@ -146,6 +147,38 @@ class TrainingSession extends Model
   public function scopeOpenForRegistration(Builder $query): Builder
   {
     return $query->where('status', 'open');
+  }
+
+  /**
+   * Liste normalisée des avantages affichés sur la page d'inscription.
+   *
+   * @return list<string>
+   */
+  public function registrationBenefitsList(): array
+  {
+    $raw = $this->registration_benefits ?? [];
+
+    if (! is_array($raw)) {
+      return [];
+    }
+
+    $benefits = [];
+
+    foreach ($raw as $item) {
+      if (is_string($item)) {
+        $label = trim($item);
+      } elseif (is_array($item)) {
+        $label = trim((string) ($item['benefit'] ?? $item['value'] ?? $item['label'] ?? reset($item) ?? ''));
+      } else {
+        $label = '';
+      }
+
+      if ($label !== '') {
+        $benefits[] = $label;
+      }
+    }
+
+    return $benefits;
   }
 
   /**

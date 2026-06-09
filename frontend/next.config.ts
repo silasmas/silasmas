@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
         hostname: "127.0.0.1",
         pathname: "/storage/**",
       },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "images.pexels.com" },
     ],
   },
 };

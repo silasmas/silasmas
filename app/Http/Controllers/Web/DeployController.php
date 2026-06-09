@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Services\Deploy\MigrationRunnerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -38,21 +39,20 @@ class DeployController extends Controller
    * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
    * @return JsonResponse Résultat JSON avec code de sortie et sortie console
    */
-  public function migrate(Request $request): JsonResponse
+  public function migrate(Request $request, MigrationRunnerService $migrationRunner): JsonResponse
   {
     $authError = $this->authorizeDeployRequest($request, 'migrate');
     if ($authError !== null) {
       return $authError;
     }
 
-    $exitCode = Artisan::call('migrate', ['--force' => true]);
-    $output = trim(Artisan::output());
+    $result = $migrationRunner->run();
 
     return response()->json([
-      'success' => $exitCode === 0,
-      'exit_code' => $exitCode,
-      'output' => $output !== '' ? $output : 'Aucune migration en attente.',
-    ], $exitCode === 0 ? 200 : 500);
+      'success' => $result['success'],
+      'exit_code' => $result['exit_code'],
+      'output' => $result['output'],
+    ], $result['success'] ? 200 : 500);
   }
 
   /**

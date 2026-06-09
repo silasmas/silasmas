@@ -16,6 +16,8 @@ import {
   MAX_MANUAL_VERIFY_ATTEMPTS,
   pollPaymentAuto,
 } from "@/lib/payment-polling";
+import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
+import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
 import type {
   MobileMoneyOperator,
   PaymentChannel,
@@ -26,6 +28,8 @@ import type {
 
 interface RegistrationFormProps {
   session: TrainingSession;
+  /** hero : champs et carte plus grands pour la page session. */
+  variant?: "default" | "hero";
 }
 
 type WizardStep = "personal" | "profile" | "summary" | "payment" | "done";
@@ -60,8 +64,11 @@ const STEP_LABELS: Record<WizardStep, string> = {
   done: "Terminé",
 };
 
-const inputClass =
-  "w-full rounded-2xl border border-amber-500/15 bg-white/[0.03] px-4 py-3.5 text-white outline-none focus:border-amber-500/45";
+const inputClassDefault =
+  "w-full rounded-xl border border-line bg-bg-elev px-4 py-3.5 text-ink outline-none transition-colors focus:border-accent";
+
+const inputClassHero =
+  "w-full rounded-xl border border-line bg-bg-elev px-5 py-4 text-base text-ink outline-none transition-colors focus:border-accent md:text-lg";
 
 /**
  * Affiche le montant en double devise si disponible.
@@ -105,8 +112,20 @@ function formatPaymentTotal(
 /**
  * Formulaire d'inscription multi-étapes avec paiement si session payante.
  */
-export function RegistrationForm({ session }: RegistrationFormProps) {
+export function RegistrationForm({
+  session,
+  variant = "default",
+}: RegistrationFormProps) {
+  const isHero = variant === "hero";
+  const inputClass = isHero ? inputClassHero : inputClassDefault;
+  const cardClass = isHero
+    ? "card-lg p-8 shadow-[0_20px_60px_rgba(0,31,63,0.08)] md:p-10 lg:p-12"
+    : "card-lg p-6 md:p-8";
+  const titleClass = isHero
+    ? "font-display text-3xl tracking-tight md:text-4xl"
+    : "font-display text-2xl tracking-tight";
   const isPaidSession = session.is_paid === true && !session.is_free;
+  const benefits = useRegistrationBenefits(session.slug, session);
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
     : ["personal", "profile", "summary", "done"];
@@ -456,23 +475,23 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
 
   if (!session.accepts_registrations) {
     return (
-      <div className="glass rounded-3xl p-8 text-center text-slate-300">
+      <div className="card-lg p-8 text-center text-muted">
         Les inscriptions pour cette session sont fermées.
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-3xl p-6 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold">Inscription</h2>
+    <div className={cardClass}>
+      <div className={`flex flex-wrap items-center justify-between gap-3 ${isHero ? "mb-8" : "mb-6"}`}>
+        <h2 className={titleClass}>Inscription à la formation</h2>
         {isPaidSession && priceLabel && (
-          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 text-sm font-semibold text-amber-300">
+          <span className="rounded-full border border-academy/30 bg-academy-soft px-4 py-1.5 text-sm font-semibold text-academy">
             {priceLabel}
           </span>
         )}
         {!isPaidSession && (
-          <span className="rounded-full border border-green-500/30 bg-green-500/10 px-4 py-1.5 text-sm text-green-400">
+          <span className="rounded-full border border-line bg-bg px-4 py-1.5 text-sm text-ink-soft">
             Gratuit
           </span>
         )}
@@ -490,10 +509,10 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
                 key={s}
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
                   active
-                    ? "bg-amber-500/25 text-amber-200"
+                    ? "bg-accent-soft text-accent"
                     : done
-                      ? "bg-white/10 text-slate-300"
-                      : "bg-white/5 text-slate-500"
+                      ? "bg-bg text-ink-soft"
+                      : "bg-bg-elev text-muted"
                 }`}
               >
                 {index + 1}. {STEP_LABELS[s]}
@@ -573,7 +592,7 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
             value={form.motivation}
             onChange={(e) => updateField("motivation", e.target.value)}
           />
-          <label className="flex items-start gap-3 text-sm text-slate-300">
+          <label className="flex items-start gap-3 text-sm text-ink-soft">
             <input
               type="checkbox"
               checked={form.marketingOptIn}
@@ -583,11 +602,11 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
             J&apos;accepte de recevoir les communications de SDev Academy.
           </label>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-            <p className="mb-3 text-sm font-medium text-slate-200">
+          <div className="rounded-2xl border border-line bg-bg p-4 md:p-5">
+            <p className="mb-3 text-sm font-medium text-ink">
               Me notifier et me rappeler
             </p>
-            <div className="space-y-2 text-sm text-slate-300">
+            <div className="space-y-2 text-sm text-ink-soft">
               {session.notify_by_email !== false && (
                 <label className="flex items-center gap-2">
                   <input
@@ -634,18 +653,18 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
 
       {step === "summary" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-sm text-slate-300">
+          <div className="rounded-2xl border border-line bg-bg p-4 text-sm text-ink-soft md:p-5">
             <p>
-              <strong className="text-white">
+              <strong className="text-ink">
                 {form.firstname} {form.lastname}
               </strong>
             </p>
             <p>{form.email}</p>
             {form.phone && <p>{form.phone}</p>}
             <p>{form.country}</p>
-            <p className="mt-3 text-amber-200/90">{session.title}</p>
+            <p className="mt-3 text-academy">{session.title}</p>
             {isPaidSession && priceLabel && (
-              <p className="mt-2 font-semibold text-amber-300">
+              <p className="mt-2 font-semibold text-academy">
                 Montant à payer : {priceLabel}
               </p>
             )}
@@ -677,18 +696,18 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
               {resumeInfo}
             </p>
           )}
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-ink-soft">
             Total :{" "}
-            <strong className="text-amber-300">
+            <strong className="text-academy">
               {formatPaymentTotal(paymentInfo, session)}
             </strong>
-            <span className="ml-2 block text-xs text-slate-500 sm:inline">
+            <span className="ml-2 block text-xs text-muted sm:inline">
               Réf. {paymentInfo.reference}
             </span>
           </p>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-slate-200">
+            <p className="mb-2 text-sm font-medium text-ink">
               Moyen de paiement *
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -696,13 +715,13 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
                 type="button"
                 className={`rounded-2xl border p-4 text-left transition ${
                   channel === "mobile_money"
-                    ? "border-amber-500/50 bg-amber-500/10"
-                    : "border-white/10 hover:border-amber-500/25"
+                    ? "border-academy/50 bg-academy-soft"
+                    : "border-line hover:border-academy/30"
                 }`}
                 onClick={() => setChannel("mobile_money")}
               >
-                <span className="font-semibold text-white">Mobile Money</span>
-                <span className="mt-1 block text-xs text-slate-400">
+                <span className="font-semibold text-ink">Mobile Money</span>
+                <span className="mt-1 block text-xs text-muted">
                   M-Pesa, Airtel, Orange, Afrimoney
                 </span>
               </button>
@@ -710,16 +729,16 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
                 type="button"
                 className={`rounded-2xl border p-4 text-left transition ${
                   channel === "card"
-                    ? "border-amber-500/50 bg-amber-500/10"
-                    : "border-white/10 hover:border-amber-500/25"
+                    ? "border-academy/50 bg-academy-soft"
+                    : "border-line hover:border-academy/30"
                 }`}
                 onClick={() => {
                   setChannel("card");
                   setMobileOperator("");
                 }}
               >
-                <span className="font-semibold text-white">Carte bancaire</span>
-                <span className="mt-1 block text-xs text-slate-400">
+                <span className="font-semibold text-ink">Carte bancaire</span>
+                <span className="mt-1 block text-xs text-muted">
                   Visa, Mastercard
                 </span>
               </button>
@@ -729,7 +748,7 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
           {channel === "mobile_money" && (
             <>
               <div>
-                <p className="mb-2 text-sm font-medium text-slate-200">
+                <p className="mb-2 text-sm font-medium text-ink">
                   Opérateur *
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -739,8 +758,8 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
                       type="button"
                       className={`rounded-xl border px-3 py-3 text-center text-sm transition ${
                         mobileOperator === op.id
-                          ? "border-amber-500/50 bg-amber-500/15 text-amber-100"
-                          : "border-white/10 text-slate-300 hover:border-amber-500/30"
+                          ? "border-academy/50 bg-academy-soft text-academy"
+                          : "border-line text-ink-soft hover:border-academy/30"
                       }`}
                       onClick={() => setMobileOperator(op.id)}
                     >
@@ -757,13 +776,13 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 Le numéro doit commencer par 243 et correspondre à l&apos;opérateur choisi.
               </p>
             </>
           )}
 
-          <label className="flex items-start gap-3 text-sm text-slate-300">
+          <label className="flex items-start gap-3 text-sm text-ink-soft">
             <input
               type="checkbox"
               checked={termsAccepted}
@@ -819,17 +838,17 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
               ? "Bienvenue à nouveau !"
               : "Inscription confirmée !"}
           </p>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-ink-soft">
             {resumeInfo?.includes("déjà inscrit") ? (
               <>
                 Vous êtes déjà inscrit(e) à cette session avec{" "}
-                <strong className="text-white">{form.email}</strong>. Accédez à votre
+                <strong className="text-ink">{form.email}</strong>. Accédez à votre
                 espace pour le compte à rebours et vos ressources.
               </>
             ) : (
               <>
                 Merci {form.firstname}. Un e-mail de confirmation a été envoyé à{" "}
-                <strong className="text-white">{form.email}</strong> avec le lien vers
+                <strong className="text-ink">{form.email}</strong> avec le lien vers
                 votre espace formation.
               </>
             )}
@@ -853,6 +872,10 @@ export function RegistrationForm({ session }: RegistrationFormProps) {
             </Link>
           </div>
         </div>
+      )}
+
+      {step !== "done" && (
+        <SessionRegistrationBenefits benefits={benefits} variant="inline" />
       )}
     </div>
   );

@@ -28,6 +28,21 @@ class ProjectResource extends Resource
   protected static ?string $pluralModelLabel = 'Projets';
 
   /**
+   * Catégories portfolio affichées sur le site.
+   *
+   * @return array<string, string>
+   */
+  public static function categoryOptions(): array
+  {
+    return [
+      'Site Web' => 'Site Web',
+      'Application' => 'Application',
+      'Plateforme' => 'Plateforme',
+      'Branding' => 'Branding',
+    ];
+  }
+
+  /**
    * Formulaire de création / édition.
    */
   public static function form(Form $form): Form
@@ -39,26 +54,40 @@ class ProjectResource extends Resource
             Forms\Components\TextInput::make('project_name')
               ->label('Nom du projet')
               ->required()
-              ->maxLength(255),
+              ->maxLength(255)
+              ->live(onBlur: true)
+              ->afterStateUpdated(function (Forms\Set $set, ?string $state, Forms\Get $get): void {
+                if (filled($get('slug'))) {
+                  return;
+                }
+
+                if (filled($state)) {
+                  $set('slug', \Illuminate\Support\Str::slug($state));
+                }
+              }),
             Forms\Components\TextInput::make('slug')
-              ->label('Slug')
+              ->label('Slug URL')
+              ->helperText('Utilisé dans /portfolio/{slug}. Généré automatiquement si vide.')
               ->maxLength(255)
               ->unique(ignoreRecord: true),
             Forms\Components\TextInput::make('client_name')
               ->label('Client')
               ->maxLength(255),
-            Forms\Components\TextInput::make('category')
+            Forms\Components\Select::make('category')
               ->label('Catégorie')
-              ->maxLength(255),
+              ->options(static::categoryOptions())
+              ->searchable(),
             Forms\Components\TextInput::make('project_date')
-              ->label('Date du projet')
+              ->label('Date / année')
+              ->placeholder('2025 ou Septembre 2025')
               ->maxLength(100),
             Forms\Components\Textarea::make('project_description')
-              ->label('Description')
-              ->rows(4)
+              ->label('Résumé (extrait)')
+              ->rows(3)
+              ->helperText('Affiché sur les cartes portfolio et en introduction de l\'étude de cas.')
               ->columnSpanFull(),
             Forms\Components\Select::make('status_id')
-              ->label('Statut')
+              ->label('Statut interne')
               ->relationship('status', 'status_name')
               ->searchable()
               ->preload(),
@@ -70,10 +99,44 @@ class ProjectResource extends Resource
               ->preload(),
           ])
           ->columns(2),
+        Forms\Components\Section::make('Étude de cas')
+          ->description('Contenu détaillé de la page /portfolio/{slug}.')
+          ->schema([
+            Forms\Components\Textarea::make('context')
+              ->label('Contexte')
+              ->rows(4)
+              ->columnSpanFull(),
+            Forms\Components\Textarea::make('challenge')
+              ->label('Enjeux')
+              ->rows(4)
+              ->columnSpanFull(),
+            Forms\Components\Textarea::make('outcome')
+              ->label('Résultat')
+              ->rows(4)
+              ->columnSpanFull(),
+            Forms\Components\TagsInput::make('tags')
+              ->label('Technologies / tags')
+              ->placeholder('Next.js, Laravel…')
+              ->columnSpanFull(),
+            Forms\Components\Repeater::make('metrics')
+              ->label('Indicateurs clés')
+              ->schema([
+                Forms\Components\TextInput::make('label')
+                  ->label('Libellé')
+                  ->required(),
+                Forms\Components\TextInput::make('value')
+                  ->label('Valeur')
+                  ->required(),
+              ])
+              ->columns(2)
+              ->defaultItems(0)
+              ->columnSpanFull(),
+          ])
+          ->collapsed(false),
         Forms\Components\Section::make('Liens & média')
           ->schema([
             Forms\Components\FileUpload::make('logo_url')
-              ->label('Logo / vignette')
+              ->label('Image de couverture')
               ->image()
               ->disk('public')
               ->directory('images/projects')
@@ -101,7 +164,7 @@ class ProjectResource extends Resource
               ->url()
               ->maxLength(255),
             Forms\Components\TextInput::make('sort_order')
-              ->label('Ordre')
+              ->label('Ordre d\'affichage')
               ->numeric()
               ->default(0),
             Forms\Components\Toggle::make('is_published')
@@ -120,39 +183,44 @@ class ProjectResource extends Resource
     return $table
       ->columns([
         Tables\Columns\ImageColumn::make('logo_url')
-          ->label('Logo')
+          ->label('Cover')
           ->disk('public')
-          ->circular(),
+          ->height(48)
+          ->width(64),
         Tables\Columns\TextColumn::make('project_name')
           ->label('Projet')
           ->searchable()
           ->sortable(),
+        Tables\Columns\TextColumn::make('slug')
+          ->label('Slug')
+          ->toggleable()
+          ->copyable(),
         Tables\Columns\TextColumn::make('client_name')
           ->label('Client')
           ->toggleable(),
         Tables\Columns\TextColumn::make('category')
           ->label('Catégorie')
-          ->badge()
-          ->toggleable(),
+          ->badge(),
         Tables\Columns\IconColumn::make('is_published')
           ->label('Publié')
           ->boolean(),
-        Tables\Columns\TextColumn::make('status.status_name')
-          ->label('Statut')
-          ->badge(),
-        Tables\Columns\TextColumn::make('user.name')
-          ->label('Responsable')
-          ->toggleable(),
+        Tables\Columns\TextColumn::make('sort_order')
+          ->label('Ordre')
+          ->sortable(),
         Tables\Columns\TextColumn::make('created_at')
           ->label('Créé le')
           ->dateTime('d/m/Y')
-          ->sortable(),
+          ->sortable()
+          ->toggleable(isToggledHiddenByDefault: true),
       ])
-      ->defaultSort('created_at', 'desc')
+      ->defaultSort('sort_order')
+      ->reorderable('sort_order')
       ->filters([
-        Tables\Filters\SelectFilter::make('status_id')
-          ->label('Statut')
-          ->relationship('status', 'status_name'),
+        Tables\Filters\SelectFilter::make('category')
+          ->label('Catégorie')
+          ->options(static::categoryOptions()),
+        Tables\Filters\TernaryFilter::make('is_published')
+          ->label('Publié'),
       ])
       ->actions([
         Tables\Actions\EditAction::make(),

@@ -72,6 +72,7 @@ class TrainingSessionResource extends JsonResource
         $request->routeIs('academy.sessions.show'),
         $this->participant_benefits
       ),
+      'registration_benefits' => $this->registrationBenefitsList(),
       'session_resources' => $this->when(
         $request->routeIs('academy.sessions.show'),
         $this->session_resources ?? []

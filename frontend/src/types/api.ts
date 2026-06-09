@@ -8,6 +8,11 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface ProjectMetric {
+  label: string;
+  value: string;
+}
+
 export interface Project {
   id: number;
   project_name: string;
@@ -16,6 +21,11 @@ export interface Project {
   client_name?: string | null;
   category?: string | null;
   project_date?: string | null;
+  context?: string | null;
+  challenge?: string | null;
+  outcome?: string | null;
+  tags?: string[];
+  metrics?: ProjectMetric[];
   web_url?: string | null;
   android_url?: string | null;
   ios_url?: string | null;
@@ -58,6 +68,7 @@ export interface TrainingSession {
   notify_by_whatsapp?: boolean;
   confidentiality_notice?: string | null;
   participant_benefits?: string | null;
+  registration_benefits?: string[];
   session_resources?: SessionResourceItem[];
 }
 
@@ -123,6 +134,33 @@ export interface CheckPaymentStatusResponse {
   registration_status?: string;
 }
 
+export interface SiteHero {
+  eyebrow?: string | null;
+  headline?: string | null;
+  headline_accent?: string | null;
+  body?: string | null;
+  image?: string | null;
+}
+
+export interface SiteTestimonial {
+  id: number;
+  quote: string;
+  author: string;
+  role?: string | null;
+}
+
+export interface SitePrinciple {
+  id: number;
+  title: string;
+  body: string;
+}
+
+export interface SiteFaq {
+  id: number;
+  q: string;
+  a: string;
+}
+
 export interface SiteAbout {
   eyebrow?: string | null;
   title: string;
@@ -141,14 +179,65 @@ export interface SiteService {
   id: number;
   title: string;
   description?: string | null;
+  excerpt?: string | null;
   icon: string;
 }
 
+export interface SilasJourneyStep {
+  id: number;
+  year: string;
+  title: string;
+  body: string;
+}
+
+export interface SilasOffer {
+  id: number;
+  icon: string;
+  title: string;
+  body: string;
+}
+
+export interface SilasPageContent {
+  hero?: {
+    eyebrow?: string | null;
+    title?: string | null;
+    accent?: string | null;
+    body?: string | null;
+    image?: string | null;
+  } | null;
+  availability?: {
+    title?: string | null;
+    body?: string | null;
+  } | null;
+  journey_intro?: {
+    title?: string | null;
+    body?: string | null;
+  } | null;
+  journey?: SilasJourneyStep[];
+  banner?: {
+    badge?: string | null;
+    title?: string | null;
+    image?: string | null;
+  } | null;
+  offers?: SilasOffer[];
+  cta?: {
+    title?: string | null;
+    subtitle?: string | null;
+    cta?: string | null;
+  } | null;
+}
+
 export interface SiteContent {
+  hero?: SiteHero | null;
   about: SiteAbout | null;
   skills: SiteSkill[];
   services: SiteService[];
+  testimonials?: SiteTestimonial[];
+  principles?: SitePrinciple[];
+  faqs?: SiteFaq[];
+  client_logos?: string[];
   hero_taglines: string[];
+  silas_page?: SilasPageContent | null;
   settings?: SiteSettings;
 }
 

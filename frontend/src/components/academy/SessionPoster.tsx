@@ -5,6 +5,8 @@ interface SessionPosterProps {
   session: TrainingSession;
   className?: string;
   priority?: boolean;
+  /** hero : page session · modal : modale promo sans débordement. */
+  variant?: "default" | "hero" | "modal";
 }
 
 /**
@@ -14,19 +16,26 @@ export function SessionPoster({
   session,
   className = "",
   priority = false,
+  variant = "default",
 }: SessionPosterProps) {
   const imageUrl = sessionCoverUrl(session);
+  const aspectClass =
+    variant === "modal"
+      ? "session-poster-modal aspect-[2/3] h-full max-h-[min(70vh,500px)] w-auto"
+      : variant === "hero"
+        ? "aspect-[2/3] min-h-[320px] md:min-h-[420px]"
+        : "aspect-[3/4]";
 
   if (imageUrl) {
     return (
       <div
-        className={`relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] ${className}`}
+        className={`relative ${aspectClass} overflow-hidden rounded-2xl border border-line bg-[#001f3f] ${variant === "modal" ? "mx-auto" : "w-full"} ${className}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt={`Affiche — ${session.title}`}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-contain"
           loading={priority ? "eager" : "lazy"}
         />
       </div>

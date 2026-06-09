@@ -31,6 +31,49 @@ class SiteBlockResource extends Resource
   protected static ?string $navigationLabel = 'Contenu du site';
 
   /**
+   * Libellés des groupes de blocs.
+   *
+   * @return array<string, string>
+   */
+  public static function groupOptions(): array
+  {
+    return [
+      'hero' => 'Hero (accueil)',
+      'about' => 'À propos',
+      'skill' => 'Compétence',
+      'service' => 'Service studio',
+      'testimonial' => 'Témoignage',
+      'principle' => 'Principe (manifeste)',
+      'faq' => 'FAQ',
+      'client_logo' => 'Logo client (bandeau)',
+      'hero_tagline' => 'Expertise hero (rotation)',
+      'silas' => 'Silas — Hero',
+      'silas_availability' => 'Silas — Disponibilité',
+      'silas_journey_intro' => 'Silas — Intro trajectoire',
+      'silas_journey' => 'Silas — Étape trajectoire',
+      'silas_banner' => 'Silas — Bannière conférence',
+      'silas_offer' => 'Silas — Offre conseil',
+      'silas_cta' => 'Silas — Appel à action',
+    ];
+  }
+
+  /**
+   * Groupes de la page Silas (singletons).
+   *
+   * @return array<int, string>
+   */
+  protected static function silasSingletonGroups(): array
+  {
+    return [
+      'silas',
+      'silas_availability',
+      'silas_journey_intro',
+      'silas_banner',
+      'silas_cta',
+    ];
+  }
+
+  /**
    * Formulaire de création / édition.
    */
   public static function form(Form $form): Form
@@ -39,43 +82,85 @@ class SiteBlockResource extends Resource
       ->schema([
         Forms\Components\Select::make('group')
           ->label('Section')
-          ->options([
-            'about' => 'À propos',
-            'skill' => 'Compétence',
-            'service' => 'Service',
-            'hero_tagline' => 'Expertise hero (rotation)',
-          ])
+          ->options(static::groupOptions())
           ->required()
           ->live(),
         Forms\Components\TextInput::make('title')
-          ->label('Titre')
+          ->label(fn (Get $get): string => match ($get('group')) {
+            'testimonial' => 'Auteur',
+            'faq' => 'Question',
+            'client_logo' => 'Nom du client',
+            'hero', 'silas' => 'Titre principal',
+            'silas_availability' => 'Période (ex. Q3 — 2026)',
+            'silas_journey_intro' => 'Titre de section',
+            'silas_banner' => 'Titre sur l\'image',
+            'silas_cta' => 'Titre CTA',
+            'silas_journey' => 'Titre de l\'étape',
+            'silas_offer' => 'Titre de l\'offre',
+            default => 'Titre',
+          })
           ->required()
           ->maxLength(255)
           ->columnSpanFull(),
         Forms\Components\TextInput::make('subtitle')
-          ->label('Sous-titre / eyebrow')
+          ->label(fn (Get $get): string => match ($get('group')) {
+            'testimonial' => 'Rôle / fonction',
+            'service' => 'Extrait court',
+            'hero', 'silas' => 'Eyebrow',
+            'silas_journey' => 'Année',
+            'silas_banner' => 'Badge (ex. Conférence — Dakar, 2025)',
+            'silas_cta' => 'Texte du bouton',
+            default => 'Sous-titre / eyebrow',
+          })
           ->maxLength(255)
-          ->visible(fn (Get $get): bool => in_array($get('group'), ['about'], true))
+          ->visible(fn (Get $get): bool => in_array($get('group'), [
+            'about', 'hero', 'testimonial', 'service', 'silas', 'silas_journey',
+            'silas_banner', 'silas_cta',
+          ], true))
           ->columnSpanFull(),
         Forms\Components\Textarea::make('body')
-          ->label('Description')
+          ->label(fn (Get $get): string => match ($get('group')) {
+            'testimonial' => 'Citation',
+            'faq' => 'Réponse',
+            'hero', 'silas' => 'Description / introduction',
+            'silas_availability' => 'Note de disponibilité',
+            'silas_journey_intro' => 'Introduction de section',
+            'silas_journey', 'silas_offer' => 'Description',
+            'silas_cta' => 'Sous-titre CTA',
+            default => 'Description',
+          })
           ->rows(4)
-          ->visible(fn (Get $get): bool => in_array($get('group'), ['about', 'service'], true))
+          ->visible(fn (Get $get): bool => in_array($get('group'), [
+            'about', 'service', 'hero', 'testimonial', 'principle', 'faq',
+            'silas', 'silas_availability', 'silas_journey_intro', 'silas_journey',
+            'silas_offer', 'silas_cta',
+          ], true))
           ->columnSpanFull(),
         Forms\Components\Textarea::make('secondary_body')
-          ->label('Texte secondaire')
+          ->label(fn (Get $get): string => match ($get('group')) {
+            'hero', 'silas' => 'Accent italique (partie colorée du titre)',
+            default => 'Texte secondaire',
+          })
           ->rows(3)
-          ->visible(fn (Get $get): bool => $get('group') === 'about')
+          ->visible(fn (Get $get): bool => in_array($get('group'), ['about', 'hero', 'silas'], true))
           ->columnSpanFull(),
         Forms\Components\Select::make('icon')
           ->label('Icône')
-          ->options([
-            'globe' => 'Globe (web)',
-            'mobile' => 'Mobile',
-            'marketing' => 'Marketing',
-            'design' => 'Design',
-          ])
-          ->visible(fn (Get $get): bool => $get('group') === 'service'),
+          ->options(fn (Get $get): array => match ($get('group')) {
+            'silas_offer' => [
+              'compass' => 'Boussole (conseil)',
+              'lightbulb' => 'Ampoule (audit)',
+              'mic' => 'Micro (conférence)',
+            ],
+            default => [
+              'globe' => 'Globe (web)',
+              'mobile' => 'Mobile',
+              'marketing' => 'Marketing',
+              'design' => 'Design',
+              'ia' => 'IA',
+            ],
+          })
+          ->visible(fn (Get $get): bool => in_array($get('group'), ['service', 'silas_offer'], true)),
         Forms\Components\TextInput::make('level')
           ->label('Niveau (%)')
           ->numeric()
@@ -89,7 +174,9 @@ class SiteBlockResource extends Resource
           ->directory('images/site')
           ->visibility('public')
           ->maxFiles(1)
-          ->visible(fn (Get $get): bool => $get('group') === 'about'),
+          ->visible(fn (Get $get): bool => in_array($get('group'), [
+            'about', 'hero', 'silas', 'silas_banner',
+          ], true)),
         Forms\Components\TextInput::make('sort_order')
           ->label('Ordre')
           ->numeric()
@@ -107,18 +194,14 @@ class SiteBlockResource extends Resource
    */
   public static function table(Table $table): Table
   {
+    $labels = static::groupOptions();
+
     return $table
       ->columns([
         Tables\Columns\TextColumn::make('group')
           ->label('Section')
           ->badge()
-          ->formatStateUsing(fn (string $state): string => match ($state) {
-            'about' => 'À propos',
-            'skill' => 'Compétence',
-            'service' => 'Service',
-            'hero_tagline' => 'Hero',
-            default => $state,
-          }),
+          ->formatStateUsing(fn (string $state): string => $labels[$state] ?? $state),
         Tables\Columns\ImageColumn::make('image')
           ->label('Image')
           ->disk('public')
@@ -143,12 +226,7 @@ class SiteBlockResource extends Resource
       ->filters([
         Tables\Filters\SelectFilter::make('group')
           ->label('Section')
-          ->options([
-            'about' => 'À propos',
-            'skill' => 'Compétence',
-            'service' => 'Service',
-            'hero_tagline' => 'Hero',
-          ]),
+          ->options(static::groupOptions()),
       ])
       ->actions([
         Tables\Actions\EditAction::make(),

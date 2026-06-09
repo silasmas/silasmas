@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SessionMediaPanel } from "@/components/academy/SessionMediaPanel";
-import { SocialShareButtons } from "@/components/academy/SocialShareButtons";
+import { SessionPoster } from "@/components/academy/SessionPoster";
+import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useSpotVideoModal } from "@/components/academy/SpotVideoModal";
-import { getSessionShareUrl } from "@/lib/share";
+import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
 import type { TrainingSession } from "@/types/api";
 
 interface ActiveSessionPromoProps {
@@ -14,14 +14,6 @@ interface ActiveSessionPromoProps {
 }
 
 const DISMISS_PREFIX = "sdev-academy-promo-dismissed-";
-
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,7 +37,12 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
   }, [session.slug]);
 
   const dismissKey = `${DISMISS_PREFIX}${session.slug}`;
-  const shareUrl = getSessionShareUrl(session);
+  const priceLabel =
+    session.formatted_price
+    ?? (session.is_paid && session.price != null
+      ? `${session.price} ${session.currency ?? "USD"}`
+      : "Gratuit");
+  const benefits = useRegistrationBenefits(session.slug, session);
 
   const closeModal = () => {
     setModalOpen(false);
@@ -62,7 +59,7 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
           aria-modal="true"
           aria-labelledby="session-promo-title"
         >
-          <div className="session-modal">
+          <div className="session-modal session-modal-promo">
             <button
               type="button"
               className="session-modal-close"
@@ -72,33 +69,44 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
               ×
             </button>
 
-            <div className="session-modal-grid">
-              <SessionMediaPanel session={session} priority showShare={false} compact />
-              <div>
-                <p className="section-eyebrow mb-3">Session en cours</p>
-                <h2 id="session-promo-title" className="mb-3 text-2xl font-bold">
+            <div className="session-modal-grid session-modal-grid-promo">
+              <div className="session-modal-poster-col">
+                <SessionPoster session={session} priority variant="modal" />
+              </div>
+              <div className="session-modal-content">
+                <p className="section-eyebrow mb-2">Session en cours — SDev Academy</p>
+                <h2
+                  id="session-promo-title"
+                  className="font-display mb-2 text-2xl leading-tight tracking-tight md:text-3xl"
+                >
                   {session.title}
                 </h2>
-                {session.subtitle && <p className="mb-3 text-muted">{session.subtitle}</p>}
-                <p className="mb-4 text-sm text-accent">
-                  {formatDate(session.start_date)} — {formatDate(session.end_date)}
+                {session.subtitle && (
+                  <p className="mb-3 text-sm text-muted md:text-base line-clamp-2">
+                    {session.subtitle}
+                  </p>
+                )}
+                <p className="mb-4 inline-flex rounded-full border border-academy/30 bg-academy-soft px-4 py-1.5 text-sm font-bold text-academy">
+                  Frais : {priceLabel}
                 </p>
                 {session.description && (
-                  <p className="mb-6 text-sm text-muted line-clamp-4">{session.description}</p>
+                  <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-2">
+                    {session.description}
+                  </p>
                 )}
-                <SocialShareButtons
-                  url={shareUrl}
-                  title={session.title}
-                  className="mb-6"
-                />
-                <div className="flex flex-wrap gap-3">
+                <SessionRegistrationBenefits benefits={benefits} variant="modal" />
+                <div className="mt-auto flex flex-wrap gap-3 pt-1">
                   {hasVideo && (
                     <button type="button" className="btn btn-outline" onClick={openModal}>
                       Voir le spot
                     </button>
                   )}
-                  <Link href={`/academy/${session.slug}`} className="btn btn-gold" onClick={closeModal}>
-                    S&apos;inscrire
+                  <Link
+                    href={`/academy/${session.slug}#inscription`}
+                    className="btn btn-gold btn-lg"
+                    onClick={closeModal}
+                  >
+                    S&apos;inscrire maintenant
                   </Link>
                   <button type="button" className="btn btn-outline" onClick={closeModal}>
                     Plus tard
@@ -133,7 +141,7 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
 export function ActiveSessionPromo({ session }: ActiveSessionPromoProps) {
   const pathname = usePathname();
 
-  if (!session || session.status !== "open" || pathname.startsWith("/academy/")) {
+  if (!session || session.status !== "open" || pathname.startsWith("/academy/espace/")) {
     return null;
   }
 

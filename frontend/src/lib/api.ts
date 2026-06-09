@@ -1,3 +1,4 @@
+import { getRegistrationBenefits } from "@/lib/session-benefits";
 import type {
   ApiResponse,
   CheckPaymentStatusResponse,
@@ -110,7 +111,7 @@ export async function getOpenSessions(): Promise<TrainingSession[]> {
   try {
     const response = await fetch(
       `${API_BASE}/academy/sessions?open_only=1`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 0 } }
     );
 
     if (!response.ok) {
@@ -139,7 +140,7 @@ export async function getSessionBySlug(
 ): Promise<TrainingSession | null> {
   try {
     const response = await fetch(`${API_BASE}/academy/sessions/${slug}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 0 },
     });
 
     if (!response.ok) {
@@ -150,6 +151,30 @@ export async function getSessionBySlug(
     return json.data ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Récupère les avantages d'inscription côté client (toujours frais).
+ *
+ * @param slug Slug de la session
+ * @return Liste normalisée des avantages
+ */
+export async function fetchRegistrationBenefits(slug: string): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE}/academy/sessions/${slug}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const json: ApiResponse<TrainingSession> = await response.json();
+
+    return getRegistrationBenefits(json.data ?? ({} as TrainingSession));
+  } catch {
+    return [];
   }
 }
 

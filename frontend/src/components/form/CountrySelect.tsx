@@ -9,11 +9,11 @@ interface CountrySelectProps {
   className?: string;
 }
 
-const inputClass =
-  "w-full rounded-2xl border border-amber-500/15 bg-white/[0.03] px-4 py-3.5 text-white outline-none focus:border-amber-500/45";
+const triggerClass =
+  "w-full rounded-xl border border-line bg-bg-elev px-4 py-3.5 text-left text-ink outline-none transition-colors focus:border-accent";
 
 /**
- * Liste déroulante de pays avec recherche par nom.
+ * Liste déroulante de pays avec recherche par nom (thème clair/sombre).
  */
 export function CountrySelect({ value, onChange, className }: CountrySelectProps) {
   const [open, setOpen] = useState(false);
@@ -44,7 +44,7 @@ export function CountrySelect({ value, onChange, className }: CountrySelectProps
     <div className={`relative ${className ?? ""}`}>
       <button
         type="button"
-        className={`${inputClass} text-left`}
+        className={triggerClass}
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -53,30 +53,32 @@ export function CountrySelect({ value, onChange, className }: CountrySelectProps
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 w-full rounded-2xl border border-amber-500/20 bg-[#0f1419] shadow-xl">
-          <div className="p-2">
+        <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-line bg-bg-elev shadow-xl">
+          <div className="border-b border-line p-2">
             <input
               type="search"
               placeholder="Rechercher un pays…"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/40"
+              className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
             />
           </div>
-          <ul
-            className="max-h-52 overflow-y-auto py-1"
-            role="listbox"
-          >
+          <ul className="max-h-52 overflow-y-auto py-1" role="listbox">
             {filtered.length === 0 && (
-              <li className="px-4 py-2 text-sm text-slate-500">Aucun pays trouvé</li>
+              <li className="px-4 py-2 text-sm text-muted">Aucun pays trouvé</li>
             )}
             {filtered.map((country) => (
               <li key={country.code}>
                 <button
                   type="button"
                   role="option"
-                  className="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-amber-500/15"
+                  aria-selected={country.name === displayValue}
+                  className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-accent-soft ${
+                    country.name === displayValue
+                      ? "bg-accent-soft font-medium text-ink"
+                      : "text-ink-soft"
+                  }`}
                   onClick={() => selectCountry(country.name)}
                 >
                   {country.name}

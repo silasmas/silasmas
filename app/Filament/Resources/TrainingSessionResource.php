@@ -177,6 +177,16 @@ class TrainingSessionResource extends Resource
               ->default(false),
           ])
           ->columns(3),
+        Forms\Components\Section::make('Page d\'inscription')
+          ->description('Avantages affichés sous le formulaire d\'inscription et dans la modale d\'accueil.')
+          ->schema([
+            Forms\Components\TagsInput::make('registration_benefits')
+              ->label('Avantages inclus')
+              ->placeholder('Saisir un avantage puis Entrée')
+              ->helperText('Un tag = un avantage. Visible sur le site dès l\'enregistrement.')
+              ->splitKeys(['Tab', ','])
+              ->columnSpanFull(),
+          ]),
         Forms\Components\Section::make('Espace participant & ressources')
           ->schema([
             Forms\Components\Textarea::make('participant_benefits')

@@ -1,46 +1,49 @@
-import { Suspense } from "react";
-import { ContactSection } from "@/components/sections/ContactSection";
-import {
-  AcademySectionLoader,
-  PortfolioSectionLoader,
-} from "@/components/sections/loaders/DataSectionLoaders";
-import {
-  HeroSectionLoader,
-  SiteContentSectionsLoader,
-} from "@/components/sections/loaders/SiteContentLoaders";
-import {
-  AcademySectionSkeleton,
-  ContactSectionSkeleton,
-  HeroSectionSkeleton,
-  PortfolioSectionSkeleton,
-  SiteContentSkeleton,
-} from "@/components/skeleton/SectionSkeletons";
+import { Hero } from "@/components/site/Hero";
+import { LogosMarquee } from "@/components/site/LogosMarquee";
+import { PillarsGrid } from "@/components/site/PillarsGrid";
+import { FeaturedWork } from "@/components/site/FeaturedWork";
+import { Manifesto } from "@/components/site/Manifesto";
+import { AcademyTeaser } from "@/components/site/AcademyTeaser";
+import { Testimonials } from "@/components/site/Testimonials";
+import { CTA } from "@/components/site/CTA";
+import { VideoShowcase } from "@/components/site/VideoShowcase";
+import { getOpenSessions, getProjects, getSiteContent } from "@/lib/api";
+import { projects as staticProjects } from "@/lib/content";
+import { mergeProjects } from "@/lib/project-mapper";
+import { mergeSiteContent } from "@/lib/site-content";
+import { pickPrimarySession } from "@/lib/sessions";
+import { stock } from "@/lib/stock";
 
 /**
- * Page d'accueil SDEV — sections streamées avec skeletons Suspense.
+ * Page d'accueil — design sdev avec contenu CMS + API.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const [apiProjects, openSessions, siteApi] = await Promise.all([
+    getProjects(),
+    getOpenSessions(),
+    getSiteContent(),
+  ]);
+  const site = mergeSiteContent(siteApi);
+  const projects = mergeProjects(apiProjects, staticProjects);
+  const primarySession = pickPrimarySession(openSessions);
+
   return (
     <>
-      <Suspense fallback={<HeroSectionSkeleton />}>
-        <HeroSectionLoader />
-      </Suspense>
-
-      <Suspense fallback={<SiteContentSkeleton />}>
-        <SiteContentSectionsLoader />
-      </Suspense>
-
-      <Suspense fallback={<PortfolioSectionSkeleton />}>
-        <PortfolioSectionLoader />
-      </Suspense>
-
-      <Suspense fallback={<AcademySectionSkeleton />}>
-        <AcademySectionLoader />
-      </Suspense>
-
-      <Suspense fallback={<ContactSectionSkeleton />}>
-        <ContactSection />
-      </Suspense>
+      <Hero content={site.hero} />
+      <LogosMarquee logos={site.clientLogos} />
+      <PillarsGrid />
+      <FeaturedWork projects={projects} />
+      <Manifesto principles={site.principles} />
+      <VideoShowcase
+        eyebrow="Une journée au studio"
+        title="On construit pour le réel."
+        description="Quelques secondes dans notre quotidien : conception, design, code, livraison."
+        src={stock.video.src}
+        poster={stock.video.poster}
+      />
+      <AcademyTeaser session={primarySession} />
+      <Testimonials testimonials={site.testimonials} />
+      <CTA />
     </>
   );
 }
