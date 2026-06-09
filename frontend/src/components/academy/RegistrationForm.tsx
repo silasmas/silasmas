@@ -18,6 +18,7 @@ import {
 } from "@/lib/payment-polling";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
+import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type {
   MobileMoneyOperator,
   PaymentChannel,
@@ -522,7 +523,7 @@ export function RegistrationForm({
       </nav>
 
       {error && (
-        <p className="mb-4 text-sm text-red-400" role="alert">
+        <p className={`mb-4 rounded-xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.danger}`} role="alert">
           {error}
         </p>
       )}
@@ -692,7 +693,7 @@ export function RegistrationForm({
       {step === "payment" && paymentInfo && (
         <form onSubmit={handlePayment} className="space-y-5">
           {resumeInfo && (
-            <p className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <p className={`rounded-2xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.info}`}>
               {resumeInfo}
             </p>
           )}
@@ -793,7 +794,7 @@ export function RegistrationForm({
           </label>
 
           {polling && (
-            <p className="text-sm text-amber-300">
+            <p className={`rounded-xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.warning}`}>
               Vérification du paiement en cours…
             </p>
           )}
@@ -833,7 +834,7 @@ export function RegistrationForm({
 
       {step === "done" && (
         <div className="space-y-6 text-center">
-          <p className="text-lg font-semibold text-green-400">
+          <p className={`text-lg font-semibold ${REGISTRATION_STATUS_STYLES.success}`}>
             {resumeInfo?.includes("déjà inscrit")
               ? "Bienvenue à nouveau !"
               : "Inscription confirmée !"}

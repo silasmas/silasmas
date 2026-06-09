@@ -30,6 +30,7 @@ export function Navbar({ items, ctaHref, ctaLabel }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const visibleNav = items;
+  const hideRegistrationCta = pathname.startsWith("/academy/");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -85,15 +86,17 @@ export function Navbar({ items, ctaHref, ctaLabel }: NavbarProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button
-              href={ctaHref}
-              size="sm"
-              variant="ink"
-              className="hidden md:inline-flex"
-            >
-              {ctaLabel}
-              <ArrowUpRight className="size-4" />
-            </Button>
+            {!hideRegistrationCta && (
+              <Button
+                href={ctaHref}
+                size="sm"
+                variant="ink"
+                className="hidden md:inline-flex"
+              >
+                {ctaLabel}
+                <ArrowUpRight className="size-4" />
+              </Button>
+            )}
             <button
               type="button"
               aria-label="Ouvrir le menu"
@@ -139,12 +142,14 @@ export function Navbar({ items, ctaHref, ctaLabel }: NavbarProps) {
                   );
                 })}
               </ul>
-              <div className="pt-4">
-                <Button href={ctaHref} className="w-full">
-                  {ctaLabel}
-                  <ArrowUpRight className="size-4" />
-                </Button>
-              </div>
+              {!hideRegistrationCta && (
+                <div className="pt-4">
+                  <Button href={ctaHref} className="w-full">
+                    {ctaLabel}
+                    <ArrowUpRight className="size-4" />
+                  </Button>
+                </div>
+              )}
             </Container>
           </motion.div>
         )}

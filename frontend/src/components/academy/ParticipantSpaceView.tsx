@@ -9,10 +9,34 @@ import {
   acceptParticipantConfidentiality,
   getParticipantSpace,
 } from "@/lib/api";
+import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type { ParticipantSpace } from "@/types/api";
 
 interface ParticipantSpaceViewProps {
   token: string;
+}
+
+interface ProfileField {
+  label: string;
+  value: string;
+}
+
+/**
+ * Construit les champs profil affichables (non vides).
+ *
+ * @param student Données étudiant API
+ * @return Liste de champs avec valeur
+ */
+function buildProfileFields(student: ParticipantSpace["student"]): ProfileField[] {
+  const candidates: ProfileField[] = [
+    { label: "E-mail", value: student.email?.trim() ?? "" },
+    { label: "Téléphone", value: student.phone?.trim() ?? "" },
+    { label: "Ville", value: student.city?.trim() ?? "" },
+    { label: "Pays", value: student.country?.trim() ?? "" },
+    { label: "Niveau d'études", value: student.education_level?.trim() ?? "" },
+  ];
+
+  return candidates.filter((field) => field.value.length > 0);
 }
 
 /**
@@ -48,7 +72,7 @@ function ParticipantSpaceContent({ token }: ParticipantSpaceViewProps) {
 
   if (loading) {
     return (
-      <div className="glass rounded-3xl p-10 text-center text-slate-400">
+      <div className="card-lg rounded-2xl p-10 text-center text-muted">
         Chargement de votre espace…
       </div>
     );
@@ -56,8 +80,10 @@ function ParticipantSpaceContent({ token }: ParticipantSpaceViewProps) {
 
   if (error || !data) {
     return (
-      <div className="glass rounded-3xl p-10 text-center">
-        <p className="text-red-400">{error ?? "Accès impossible"}</p>
+      <div className="card-lg rounded-2xl p-10 text-center">
+        <p className={`rounded-xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.danger}`}>
+          {error ?? "Accès impossible"}
+        </p>
         <Link href="/" className="btn btn-outline mt-6 inline-block">
           Retour à l&apos;accueil
         </Link>
@@ -78,24 +104,26 @@ function ParticipantSpaceContent({ token }: ParticipantSpaceViewProps) {
         ? "Présentiel"
         : "Hybride";
 
+  const profileFields = buildProfileFields(data.student);
+
   return (
     <div className="space-y-8">
       {paymentSuccess && (
-        <div className="rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.success}`}>
           Paiement confirmé. Bienvenue dans votre espace formation.
         </div>
       )}
 
-      <div className="glass rounded-3xl p-6 md:p-8">
-        <span className="section-eyebrow">Mon espace formation</span>
-        <h1 className="section-title mt-2">
+      <div className="card-lg rounded-2xl p-6 md:p-8">
+        <span className="eyebrow">Mon espace formation</span>
+        <h1 className="font-display mt-2 text-3xl tracking-tight text-ink md:text-4xl">
           Bonjour {data.student.firstname} {data.student.lastname}
         </h1>
-        <p className="mt-2 text-lg text-amber-200/90">{data.session.title}</p>
+        <p className="mt-2 text-lg font-medium text-academy">{data.session.title}</p>
         {data.session.subtitle && (
           <p className="text-muted">{data.session.subtitle}</p>
         )}
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-ink-soft">
           {startLabel} — {formatLabel}
         </p>
       </div>
@@ -105,44 +133,28 @@ function ParticipantSpaceContent({ token }: ParticipantSpaceViewProps) {
         startDateLabel={startLabel}
       />
 
-      <div className="glass rounded-3xl p-6">
-        <h2 className="mb-4 text-xl font-semibold">Vos informations</h2>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">E-mail</dt>
-            <dd className="text-white">{data.student.email}</dd>
-          </div>
-          {data.student.phone && (
-            <div>
-              <dt className="text-slate-500">Téléphone</dt>
-              <dd className="text-white">{data.student.phone}</dd>
-            </div>
-          )}
-          {data.student.city && (
-            <div>
-              <dt className="text-slate-500">Ville</dt>
-              <dd className="text-white">{data.student.city}</dd>
-            </div>
-          )}
-          {data.student.country && (
-            <div>
-              <dt className="text-slate-500">Pays</dt>
-              <dd className="text-white">{data.student.country}</dd>
-            </div>
-          )}
-          {data.student.education_level && (
-            <div className="sm:col-span-2">
-              <dt className="text-slate-500">Niveau d&apos;études</dt>
-              <dd className="text-white">{data.student.education_level}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
+      {profileFields.length > 0 && (
+        <div className="card-lg rounded-2xl p-6 md:p-7">
+          <h2 className="font-display mb-4 text-xl tracking-tight text-ink">
+            Vos informations
+          </h2>
+          <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            {profileFields.map((field) => (
+              <div key={field.label}>
+                <dt className="eyebrow mb-1">{field.label}</dt>
+                <dd className="text-base text-ink">{field.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
 
-      {data.session.participant_benefits && (
-        <div className="glass rounded-3xl p-6">
-          <h2 className="mb-3 text-xl font-semibold">Ce qui vous attend</h2>
-          <p className="whitespace-pre-wrap text-sm text-slate-300">
+      {data.session.participant_benefits?.trim() && (
+        <div className="card-lg rounded-2xl p-6 md:p-7">
+          <h2 className="font-display mb-3 text-xl tracking-tight text-ink">
+            Ce qui vous attend
+          </h2>
+          <p className="whitespace-pre-wrap text-sm text-ink-soft leading-relaxed">
             {data.session.participant_benefits}
           </p>
         </div>
@@ -183,7 +195,7 @@ export function ParticipantSpaceView({ token }: ParticipantSpaceViewProps) {
   return (
     <Suspense
       fallback={
-        <div className="glass rounded-3xl p-10 text-center text-slate-400">
+        <div className="card-lg rounded-2xl p-10 text-center text-muted">
           Chargement…
         </div>
       }

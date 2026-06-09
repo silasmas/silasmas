@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { getPaymentAlertStyle } from "@/lib/registration-status";
 
 /**
  * Affiche un message après retour paiement carte via query string.
@@ -14,33 +15,22 @@ export function PaymentReturnAlert() {
     return null;
   }
 
-  const messages: Record<string, { text: string; className: string }> = {
-    success: {
-      text: "Paiement confirmé. Votre inscription est validée.",
-      className: "text-green-400 border-green-500/30 bg-green-500/10",
-    },
-    cancel: {
-      text: "Paiement annulé. Vous pouvez réessayer ci-dessous.",
-      className: "text-amber-400 border-amber-500/30 bg-amber-500/10",
-    },
-    decline: {
-      text: "Paiement refusé. Vérifiez vos informations ou choisissez un autre moyen.",
-      className: "text-red-400 border-red-500/30 bg-red-500/10",
-    },
-    error: {
-      text: "Une erreur est survenue lors du paiement.",
-      className: "text-red-400 border-red-500/30 bg-red-500/10",
-    },
+  const messages: Record<string, string> = {
+    success: "Paiement confirmé. Votre inscription est validée.",
+    cancel: "Paiement annulé. Vous pouvez réessayer ci-dessous.",
+    decline: "Paiement refusé. Vérifiez vos informations ou choisissez un autre moyen.",
+    error: "Une erreur est survenue lors du paiement.",
   };
 
-  const info = messages[payment] ?? messages.error;
+  const text = messages[payment] ?? messages.error;
+  const styleClass = getPaymentAlertStyle(payment);
 
   return (
     <div
-      className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${info.className}`}
+      className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${styleClass}`}
       role="status"
     >
-      {info.text}
+      {text}
       {reference && payment === "success" && (
         <span className="mt-1 block text-xs opacity-80">Réf. {reference}</span>
       )}

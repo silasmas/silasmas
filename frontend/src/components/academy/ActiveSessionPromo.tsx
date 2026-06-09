@@ -141,7 +141,7 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
 export function ActiveSessionPromo({ session }: ActiveSessionPromoProps) {
   const pathname = usePathname();
 
-  if (!session || session.status !== "open" || pathname.startsWith("/academy/espace/")) {
+  if (!session || session.status !== "open" || pathname.startsWith("/academy/")) {
     return null;
   }
 
