@@ -7,7 +7,11 @@ import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useSpotVideoModal } from "@/components/academy/SpotVideoModal";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
-import type { TrainingSession } from "@/types/api";
+import { pickPrimarySession } from "@/lib/sessions";
+import type { ApiResponse, TrainingSession } from "@/types/api";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
 interface ActiveSessionPromoProps {
   session: TrainingSession | null;
@@ -15,7 +19,29 @@ interface ActiveSessionPromoProps {
 
 const DISMISS_PREFIX = "sdev-academy-promo-dismissed-";
 
+/**
+ * Indique si la promo doit être masquée sur cette route.
+ *
+ * @param pathname Chemin courant
+ * @return true sur l'espace participant uniquement
+ */
+function isPromoHiddenPath(pathname: string): boolean {
+  return pathname.startsWith("/academy/espace/");
+}
+
+/**
+ * Page d'inscription /academy/{slug} (FAB décalé pour ne pas gêner le formulaire).
+ *
+ * @param pathname Chemin courant
+ * @return true sur la page session
+ */
+function isAcademyRegistrationPath(pathname: string): boolean {
+  return /^\/academy\/[^/]+$/.test(pathname);
+}
+
 function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
+  const pathname = usePathname();
+  const isRegistrationPage = isAcademyRegistrationPath(pathname);
   const [modalOpen, setModalOpen] = useState(false);
   const [fabVisible, setFabVisible] = useState(false);
   const { openModal, SpotVideoModal } = useSpotVideoModal(session);
@@ -123,7 +149,7 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
       {fabVisible && !modalOpen && (
         <button
           type="button"
-          className="session-fab"
+          className={`session-fab${isRegistrationPage ? " session-fab--registration" : ""}`}
           onClick={() => setModalOpen(true)}
           aria-label="Voir la session Academy en cours"
         >
@@ -138,10 +164,44 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
 /**
  * Modale d'accueil pour la session ouverte + bouton flottant de rappel.
  */
-export function ActiveSessionPromo({ session }: ActiveSessionPromoProps) {
+export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPromoProps) {
   const pathname = usePathname();
+  const [session, setSession] = useState<TrainingSession | null>(initialSession);
 
-  if (!session || session.status !== "open" || pathname.startsWith("/academy/")) {
+  useEffect(() => {
+    setSession(initialSession);
+  }, [initialSession]);
+
+  useEffect(() => {
+    if (session?.status === "open") {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch(`${API_BASE}/academy/sessions?open_only=1`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((json: ApiResponse<TrainingSession[]> | null) => {
+        if (cancelled || !json?.data?.length) {
+          return;
+        }
+
+        const primary = pickPrimarySession(json.data);
+
+        if (primary?.status === "open") {
+          setSession(primary);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.status]);
+
+  if (!session || session.status !== "open" || isPromoHiddenPath(pathname)) {
     return null;
   }
 

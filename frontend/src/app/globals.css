@@ -394,6 +394,19 @@ body {
   transform: translateY(-3px);
 }
 
+.session-fab--registration {
+  right: auto;
+  left: 1.25rem;
+  bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .session-fab--registration {
+    bottom: 5.5rem;
+    max-width: calc(100vw - 2.5rem);
+  }
+}
+
 .session-fab-dot {
   width: 0.5rem;
   height: 0.5rem;
