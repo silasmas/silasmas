@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Script from "next/script";
-import { ActiveSessionPromo } from "@/components/academy/ActiveSessionPromo";
+import { ActiveSessionPromoLazy } from "@/components/academy/ActiveSessionPromoLazy";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
@@ -129,7 +129,7 @@ export default async function RootLayout({
             />
             <main className="flex-1">{children}</main>
             <Footer />
-            <ActiveSessionPromo session={primarySession} />
+            <ActiveSessionPromoLazy session={primarySession} />
           </ThemeProvider>
         </SiteSettingsProvider>
       </body>

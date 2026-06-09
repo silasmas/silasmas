@@ -1,42 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchRegistrationBenefits } from "@/lib/api";
 import { getRegistrationBenefits } from "@/lib/session-benefits";
 import type { TrainingSession } from "@/types/api";
 
 /**
- * Charge les avantages d'inscription en direct depuis l'API (sans cache).
+ * Retourne les avantages d'inscription fournis par la session (données serveur).
  *
- * @param slug Slug de la session
- * @param session Session initiale (rendu serveur)
- * @return Liste d'avantages à jour
+ * @param _slug Slug conservé pour compatibilité des appels existants
+ * @param session Session chargée côté serveur ou modale
+ * @return Liste d'avantages
  */
 export function useRegistrationBenefits(
-  slug: string,
+  _slug: string,
   session?: TrainingSession | null,
 ): string[] {
-  const [benefits, setBenefits] = useState<string[]>(() => {
-    return session ? getRegistrationBenefits(session) : [];
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchRegistrationBenefits(slug)
-      .then((items) => {
-        if (!cancelled) {
-          setBenefits(items);
-        }
-      })
-      .catch(() => {
-        // Conserve les avantages initiaux en cas d'erreur réseau.
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
-  return benefits;
+  return session ? getRegistrationBenefits(session) : [];
 }

@@ -1,4 +1,4 @@
-import { getRegistrationBenefits } from "@/lib/session-benefits";
+import { cache } from "react";
 import type {
   ApiResponse,
   CheckPaymentStatusResponse,
@@ -15,6 +15,12 @@ import type {
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+
+/** Durée de cache ISR pour le contenu CMS (secondes). */
+const REVALIDATE_SITE_SECONDS = 300;
+
+/** Durée de cache ISR pour les sessions Academy (secondes). */
+const REVALIDATE_SESSIONS_SECONDS = 60;
 
 /**
  * Construit l'URL absolue d'un asset stocké côté Laravel (/storage/...).
@@ -67,10 +73,10 @@ export function sessionCoverUrl(session: {
 /**
  * Récupère le contenu dynamique du site (à propos, services, compétences).
  */
-export async function getSiteContent(): Promise<SiteContent | null> {
+export const getSiteContent = cache(async (): Promise<SiteContent | null> => {
   try {
     const response = await fetch(`${API_BASE}/site`, {
-      next: { revalidate: 120 },
+      next: { revalidate: REVALIDATE_SITE_SECONDS },
     });
 
     if (!response.ok) {
@@ -82,12 +88,12 @@ export async function getSiteContent(): Promise<SiteContent | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Récupère les projets portfolio depuis l'API.
  */
-export async function getProjects(): Promise<Project[]> {
+export const getProjects = cache(async (): Promise<Project[]> => {
   try {
     const response = await fetch(`${API_BASE}/project`, {
       next: { revalidate: 120 },
@@ -102,16 +108,16 @@ export async function getProjects(): Promise<Project[]> {
   } catch {
     return [];
   }
-}
+});
 
 /**
  * Récupère les sessions Academy avec inscriptions ouvertes (status = open).
  */
-export async function getOpenSessions(): Promise<TrainingSession[]> {
+export const getOpenSessions = cache(async (): Promise<TrainingSession[]> => {
   try {
     const response = await fetch(
       `${API_BASE}/academy/sessions?open_only=1`,
-      { next: { revalidate: 0 } }
+      { next: { revalidate: REVALIDATE_SESSIONS_SECONDS } },
     );
 
     if (!response.ok) {
@@ -123,7 +129,7 @@ export async function getOpenSessions(): Promise<TrainingSession[]> {
   } catch {
     return [];
   }
-}
+});
 
 /**
  * @deprecated Utiliser getOpenSessions() + pickPrimarySession()
@@ -135,12 +141,12 @@ export async function getFeaturedSessions(): Promise<TrainingSession[]> {
 /**
  * Récupère une session Academy par slug.
  */
-export async function getSessionBySlug(
-  slug: string
-): Promise<TrainingSession | null> {
+export const getSessionBySlug = cache(async (
+  slug: string,
+): Promise<TrainingSession | null> => {
   try {
     const response = await fetch(`${API_BASE}/academy/sessions/${slug}`, {
-      next: { revalidate: 0 },
+      next: { revalidate: REVALIDATE_SESSIONS_SECONDS },
     });
 
     if (!response.ok) {
@@ -152,31 +158,7 @@ export async function getSessionBySlug(
   } catch {
     return null;
   }
-}
-
-/**
- * Récupère les avantages d'inscription côté client (toujours frais).
- *
- * @param slug Slug de la session
- * @return Liste normalisée des avantages
- */
-export async function fetchRegistrationBenefits(slug: string): Promise<string[]> {
-  try {
-    const response = await fetch(`${API_BASE}/academy/sessions/${slug}`, {
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const json: ApiResponse<TrainingSession> = await response.json();
-
-    return getRegistrationBenefits(json.data ?? ({} as TrainingSession));
-  } catch {
-    return [];
-  }
-}
+});
 
 /**
  * Envoie une inscription Academy (client-side).
