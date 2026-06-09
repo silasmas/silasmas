@@ -84,6 +84,33 @@ class DeployController extends Controller
    * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
    * @return JsonResponse Résultat JSON avec code de sortie et sortie console
    */
+  /**
+   * Vide et reconstruit le cache de configuration (après changement .env ou déploiement).
+   *
+   * @param Request $request Requête HTTP (secret via query ?secret= ou en-tête X-Deploy-Secret)
+   * @return JsonResponse Résultat JSON
+   */
+  public function configRefresh(Request $request): JsonResponse
+  {
+    $authError = $this->authorizeDeployRequest($request, 'migrate');
+    if ($authError !== null) {
+      return $authError;
+    }
+
+    Artisan::call('config:clear');
+    $clearOutput = trim(Artisan::output());
+    Artisan::call('config:cache');
+    $cacheOutput = trim(Artisan::output());
+
+    return response()->json([
+      'success' => true,
+      'exit_code' => 0,
+      'output' => trim($clearOutput."\n".$cacheOutput),
+      'frontend_url' => config('app.frontend_url'),
+      'participant_base' => \App\Support\FrontendUrl::base(),
+    ]);
+  }
+
   public function storageLink(Request $request): JsonResponse
   {
     $authError = $this->authorizeDeployRequest($request, 'storage-link');

@@ -3,10 +3,13 @@
 namespace App\Support;
 
 /**
- * URL de base du site public Next.js (liens participants, partage, retours paiement).
+ * URL de base du site public Next.js (e-mails, liens participant, partage, FlexPay).
  */
 class FrontendUrl
 {
+  /** URL publique du site vitrine en production. */
+  private const PRODUCTION_BASE = 'https://silasmas.com';
+
   /**
    * Retourne l'URL racine du frontend sans slash final.
    *
@@ -15,16 +18,25 @@ class FrontendUrl
   public static function base(): string
   {
     $configured = rtrim((string) config('app.frontend_url', ''), '/');
+    $appUrl = rtrim((string) config('app.url', ''), '/');
 
-    if (self::isUsable($configured)) {
+    if ($configured !== '' && self::isLocalHostUrl($configured)) {
+      if (self::isLocalDevRuntime($appUrl)) {
+        return $configured;
+      }
+    } elseif ($configured !== '') {
       return $configured;
     }
 
-    if (app()->environment('production')) {
-      return 'https://silasmas.com';
+    if (self::isProductionApiHost($appUrl)) {
+      return self::PRODUCTION_BASE;
     }
 
-    return rtrim((string) config('app.url', 'http://localhost'), '/');
+    if (self::isLocalDevRuntime($appUrl)) {
+      return $configured !== '' ? $configured : 'http://localhost:3000';
+    }
+
+    return self::PRODUCTION_BASE;
   }
 
   /**
@@ -39,21 +51,53 @@ class FrontendUrl
   }
 
   /**
-   * Indique si l'URL configurée est exploitable en production.
+   * Indique si l'URL pointe vers localhost ou 127.0.0.1.
    *
-   * @param string $url URL candidate
-   * @return bool true si utilisable
+   * @param string $url URL à tester
+   * @return bool true si URL locale
    */
-  protected static function isUsable(string $url): bool
+  protected static function isLocalHostUrl(string $url): bool
   {
-    if ($url === '') {
-      return false;
-    }
+    return (bool) preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?(/|$)#i', $url);
+  }
 
-    if (! app()->environment('production')) {
+  /**
+   * Indique si l'API tourne en environnement de développement local.
+   *
+   * @param string $appUrl APP_URL configurée
+   * @return bool true en dev local
+   */
+  protected static function isLocalDevRuntime(string $appUrl): bool
+  {
+    if (app()->environment('local')) {
       return true;
     }
 
-    return ! preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?(/|$)#i', $url);
+    return $appUrl !== '' && self::isLocalHostUrl($appUrl);
+  }
+
+  /**
+   * Indique si l'API est hébergée sur le domaine Silasmas production.
+   *
+   * @param string $appUrl APP_URL configurée
+   * @return bool true sur api.silasmas.com ou silasmas.com
+   */
+  protected static function isProductionApiHost(string $appUrl): bool
+  {
+    if ($appUrl === '') {
+      return false;
+    }
+
+    $host = parse_url($appUrl, PHP_URL_HOST);
+
+    if (! is_string($host) || $host === '') {
+      return false;
+    }
+
+    $host = strtolower($host);
+
+    return $host === 'api.silasmas.com'
+      || $host === 'silasmas.com'
+      || str_ends_with($host, '.silasmas.com');
   }
 }

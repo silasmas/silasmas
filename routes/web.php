@@ -19,6 +19,7 @@ Route::get('/symlink', 'App\Http\Controllers\Web\HomeController@symlink')->name(
 |--------------------------------------------------------------------------
  */
 Route::get('/deploy/migrate', [DeployController::class, 'migrate'])->name('deploy.migrate');
+Route::get('/deploy/config-refresh', [DeployController::class, 'configRefresh'])->name('deploy.config-refresh');
 Route::get('/deploy/seed', [DeployController::class, 'seed'])->name('deploy.seed');
 Route::get('/deploy/storage-link', [DeployController::class, 'storageLink'])->name('deploy.storage-link');
 Route::get('/detail/{id}', 'App\Http\Controllers\Web\HomeController@detail')->name('detail');

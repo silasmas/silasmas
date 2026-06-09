@@ -37,7 +37,7 @@ return [
         'gateway_mobile' => env('FLEXPAY_GATEWAY_MOBILE', 'https://backend.flexpay.cd/api/rest/v1/mobile'),
         'gateway_card' => env('FLEXPAY_GATEWAY_CARD', 'https://backend.flexpay.cd/api/rest/v1/card'),
         'gateway_check' => env('FLEXPAY_GATEWAY_CHECK', 'https://backend.flexpay.cd/api/rest/v1/check'),
-        'frontend_url' => rtrim(config('app.frontend_url', 'https://silasmas.com'), '/'),
+        'frontend_url' => rtrim(env('FRONTEND_URL', 'https://silasmas.com'), '/'),
         'mobile_types' => [
             'mpesa' => env('FLEXPAY_TYPE_MPESA', '1'),
             'airtel' => env('FLEXPAY_TYPE_AIRTEL', '2'),

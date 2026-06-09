@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\FrontendUrl;
+
 /**
  * Service FlexPay — initiation des paiements par carte bancaire.
  */
@@ -42,7 +44,7 @@ class FlexPayService
       'approve_url' => "{$baseRedirectUrl}/success",
       'cancel_url' => "{$baseRedirectUrl}/cancel",
       'decline_url' => "{$baseRedirectUrl}/decline",
-      'home_url' => config('services.flexpay.frontend_url'),
+      'home_url' => FrontendUrl::base(),
     ];
 
     $curl = curl_init(config('services.flexpay.gateway_card'));
