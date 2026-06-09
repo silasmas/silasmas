@@ -7,7 +7,8 @@ export const ACADEMY_LAUNCH_MODE =
 
 /** Slug de repli si l'API ne renvoie aucune session ouverte. */
 export const PRIMARY_SESSION_SLUG =
-  process.env.NEXT_PUBLIC_PRIMARY_SESSION_SLUG ?? "vibe-coding-2026";
+  process.env.NEXT_PUBLIC_PRIMARY_SESSION_SLUG
+  ?? "vibe-coding-la-nouvelle-facon-de-developper-avec-lia";
 
 /** Routes masquées (redirection vers la session active). */
 export const LAUNCH_HIDDEN_PATHS = [
@@ -89,4 +90,36 @@ export function getPrimaryRegistrationHref(sessionSlug?: string | null): string 
   const slug = sessionSlug ?? PRIMARY_SESSION_SLUG;
 
   return buildAcademySessionPath(slug);
+}
+
+/**
+ * Résout le chemin de redirection en mode lancement (middleware Edge).
+ * Interroge l'API pour le slug actif, avec repli sur PRIMARY_SESSION_SLUG.
+ *
+ * @return Chemin /academy/{slug}
+ */
+export async function resolveLaunchRedirectPath(): Promise<string> {
+  const fallback = buildAcademySessionPath(PRIMARY_SESSION_SLUG);
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!apiBase) {
+    return fallback;
+  }
+
+  try {
+    const response = await fetch(`${apiBase}/academy/sessions?open_only=1`, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const json = await response.json();
+    const sessions: TrainingSession[] = json.data ?? [];
+
+    return buildAcademySessionPath(resolvePrimarySessionSlug(sessions));
+  } catch {
+    return fallback;
+  }
 }

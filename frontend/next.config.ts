@@ -10,6 +10,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: frontendRoot,
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Vary",
+            value:
+              "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url, Accept-Encoding",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

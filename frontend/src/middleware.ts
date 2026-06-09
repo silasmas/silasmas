@@ -1,38 +1,46 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isAcademyLaunchMode, LAUNCH_HIDDEN_PATHS } from "@/lib/launch";
+import {
+  isAcademyLaunchMode,
+  LAUNCH_HIDDEN_PATHS,
+  resolveLaunchRedirectPath,
+} from "@/lib/launch";
 
 /**
- * Redirige l'accueil et les pages en construction vers la session Academy active.
+ * Redirige l'accueil et les pages masquées vers la session Academy active.
+ * Évite de servir /academy (page hub) dont le cache CDN peut confondre HTML et RSC.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (!isAcademyLaunchMode()) {
     return NextResponse.next();
   }
 
   const { pathname } = request.nextUrl;
-  const academyHubUrl = "/academy";
-
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL(academyHubUrl, request.url));
-  }
-
+  const isAcademyHub =
+    pathname === "/academy" || pathname === "/academy/";
+  const isHome = pathname === "/";
   const isHidden = LAUNCH_HIDDEN_PATHS.some(
     (hiddenPath) =>
       pathname === hiddenPath || pathname.startsWith(`${hiddenPath}/`),
   );
 
-  if (isHidden) {
-    return NextResponse.redirect(new URL(academyHubUrl, request.url));
+  if (!isHome && !isAcademyHub && !isHidden) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  const target = await resolveLaunchRedirectPath();
+  const response = NextResponse.redirect(new URL(target, request.url));
+
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+
+  return response;
 }
 
 export const config = {
   matcher: [
     "/",
     "/academy",
+    "/academy/",
     "/silas/:path*",
     "/studio/:path*",
     "/portfolio/:path*",
