@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Academy;
 
 use App\Support\CurrencyConverter;
+use App\Support\FrontendUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -55,7 +56,7 @@ class TrainingSessionResource extends JsonResource
       'spot_video_embed_url' => $this->spotVideoEmbedUrl(),
       'spot_video_watch_url' => $this->spotVideoWatchUrl(),
       'spot_video_thumbnail_url' => $this->spotVideoThumbnailUrl(),
-      'share_url' => rtrim(env('FRONTEND_URL', config('app.url')), '/').'/academy/'.$this->slug,
+      'share_url' => FrontendUrl::to('academy/'.$this->slug),
       'accepts_registrations' => $this->acceptsRegistrations(),
       'active_registrations_count' => $this->when(
         $request->routeIs('academy.sessions.show'),

@@ -32,9 +32,8 @@ class ParticipantToken
    */
   public static function frontendUrl(Registration $registration): string
   {
-    $base = rtrim(config('services.flexpay.frontend_url', env('FRONTEND_URL', config('app.url'))), '/');
     $token = $registration->access_token ?? '';
 
-    return "{$base}/academy/espace/{$token}";
+    return FrontendUrl::to("academy/espace/{$token}");
   }
 }

@@ -112,9 +112,12 @@ img {
 /* Logo */
 
 .logo {
-    height: 75px;
-    max-height: 75px;
-    width: 75px;
+    display: block;
+    height: auto;
+    margin: 0 auto;
+    max-height: 72px;
+    max-width: 220px;
+    width: auto;
 }
 
 /* Body */
@@ -232,11 +235,11 @@ img {
 
 .button-blue,
 .button-primary {
-    background-color: #2d3748;
-    border-bottom: 8px solid #2d3748;
-    border-left: 18px solid #2d3748;
-    border-right: 18px solid #2d3748;
-    border-top: 8px solid #2d3748;
+    background-color: #b45309;
+    border-bottom: 8px solid #b45309;
+    border-left: 18px solid #b45309;
+    border-right: 18px solid #b45309;
+    border-top: 8px solid #b45309;
 }
 
 .button-green,

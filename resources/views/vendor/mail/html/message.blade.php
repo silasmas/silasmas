@@ -1,8 +1,13 @@
+@php
+  $mailSettings = \App\Models\SiteSetting::instance();
+  $mailHomeUrl = \App\Support\FrontendUrl::base();
+  $mailBrandName = $mailSettings->site_title ?? config('app.name');
+@endphp
 @component('mail::layout')
 {{-- Header --}}
 @slot('header')
-@component('mail::header', ['url' => config('app.url')])
-{{ config('app.name') }}
+@component('mail::header', ['url' => $mailHomeUrl])
+{{ $mailBrandName }}
 @endcomponent
 @endslot
 
@@ -21,7 +26,7 @@
 {{-- Footer --}}
 @slot('footer')
 @component('mail::footer')
-© {{ date('Y') }} {{ config('app.name') }}. @lang('All rights reserved.')
+© {{ date('Y') }} {{ $mailBrandName }} — SDev Academy
 @endcomponent
 @endslot
 @endcomponent

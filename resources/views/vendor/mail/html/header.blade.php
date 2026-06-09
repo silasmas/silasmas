@@ -1,12 +1,16 @@
+@php
+  $mailSettings = \App\Models\SiteSetting::instance();
+  $mailLogoUrl = $mailSettings->logoUrl();
+  $mailBrandName = $mailSettings->site_title ?? config('app.name');
+@endphp
 <tr>
 <td class="header">
 <a href="{{ $url }}" style="display: inline-block;">
-    <img src="{{ asset('assets/img/logo-bg-1.png') }}" class="logo" alt="{{ $slot }}">
-{{-- @if (trim($slot) === 'Laravel')
-<img src="https://laravel.com/img/notification-logo.png" class="logo" alt="Laravel Logo">
+@if($mailLogoUrl)
+    <img src="{{ $mailLogoUrl }}" class="logo" alt="{{ $mailBrandName }}">
 @else
-{{ $slot }}
-@endif --}}
+    <span style="color: #1a1a1a; font-size: 18px; font-weight: 700;">{{ $mailBrandName }}</span>
+@endif
 </a>
 </td>
 </tr>

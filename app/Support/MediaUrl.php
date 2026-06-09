@@ -110,7 +110,7 @@ class MediaUrl
       return null;
     }
 
-    $origin = rtrim($origin ?? env('FRONTEND_URL', config('app.url')), '/');
+    $origin = rtrim($origin ?? FrontendUrl::base(), '/');
     $query = http_build_query([
       'rel' => '0',
       'modestbranding' => '1',

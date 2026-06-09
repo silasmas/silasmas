@@ -1,22 +1,46 @@
+@php
+  $siteSettings = \App\Models\SiteSetting::instance();
+  $brandName = $siteSettings->site_title ?? config('app.name');
+  $startLabel = $session->start_date?->locale('fr')->translatedFormat('j F Y');
+  $endLabel = $session->end_date?->locale('fr')->translatedFormat('j F Y');
+  $formatLabel = match ($session->format) {
+    'online' => 'En ligne',
+    'in_person' => 'Présentiel',
+    'hybrid' => 'Hybride',
+    default => $session->format ?? 'En ligne',
+  };
+@endphp
 @component('mail::message')
 # Bonjour {{ $student->firstname }},
 
 @if($paymentConfirmed)
-Votre **paiement** pour la formation **{{ $session->title }}** est bien enregistré.
+Votre **paiement** est confirmé. Vous êtes officiellement inscrit·e à la formation ci-dessous.
 @else
-Votre **inscription** à la formation **{{ $session->title }}** est confirmée.
+Votre **inscription** est confirmée. Nous avons hâte de vous accompagner pendant cette formation.
 @endif
 
-**Dates :** {{ $session->start_date?->format('d/m/Y') }} — {{ $session->end_date?->format('d/m/Y') }}
+@component('mail::panel')
+**{{ $session->title }}**
 
-Accédez à votre espace participant pour voir le compte à rebours, vos informations et les ressources de la session :
+@if($session->subtitle)
+{{ $session->subtitle }}
 
-@component('mail::button', ['url' => $participantUrl])
+@endif
+**Dates :** {{ $startLabel }}@if($endLabel) — {{ $endLabel }}@endif
+
+**Format :** {{ $formatLabel }}
+@endcomponent
+
+Accédez à votre **espace participant** pour suivre le compte à rebours, consulter vos informations et retrouver les ressources de la session :
+
+@component('mail::button', ['url' => $participantUrl, 'color' => 'primary'])
 Mon espace formation
 @endcomponent
 
-Conservez ce lien : [{{ $participantUrl }}]({{ $participantUrl }})
+Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
 
-Merci,<br>
-{{ config('app.name') }} — SDev Academy
+{{ $participantUrl }}
+
+Merci pour votre confiance,<br>
+**{{ $brandName }}** — SDev Academy
 @endcomponent

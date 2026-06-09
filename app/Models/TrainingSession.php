@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Support\FrontendUrl;
 use App\Support\MediaUrl;
 use Illuminate\Support\Str;
 
@@ -225,7 +226,7 @@ class TrainingSession extends Model
     if ($this->spot_video_type === 'youtube') {
       return MediaUrl::youtubeEmbedUrl(
         $url,
-        env('FRONTEND_URL', config('app.url'))
+        FrontendUrl::base()
       );
     }
 

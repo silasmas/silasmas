@@ -61,6 +61,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend public (Next.js)
+    |--------------------------------------------------------------------------
+    |
+    | URL du site vitrine utilisée dans les e-mails, liens participant et CORS.
+    | En production : https://silasmas.com
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'https://silasmas.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

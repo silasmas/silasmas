@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SessionPayment;
 use App\Services\AcademyRegistrationNotifier;
+use App\Support\FrontendUrl;
 use App\Support\ParticipantToken;
 use Illuminate\Http\RedirectResponse;
 
@@ -30,7 +31,7 @@ class AcademyPaymentReturnController extends Controller
       ->with('registration.trainingSession')
       ->first();
 
-    $frontendBase = rtrim(config('services.flexpay.frontend_url'), '/');
+    $frontendBase = FrontendUrl::base();
     $slug = $payment?->registration?->trainingSession?->slug ?? '';
 
     if ($payment === null) {
