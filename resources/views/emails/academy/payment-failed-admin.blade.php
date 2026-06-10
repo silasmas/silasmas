@@ -4,45 +4,51 @@
   $studentName = $student
     ? trim(($student->firstname ?? '').' '.($student->lastname ?? ''))
     : 'Inconnu';
-  $serverResponse = $payment->formattedServerResponse();
+  $serverLines = $serverLines ?? $presenter->serverResponseLines();
+  $failedAt = $payment->failed_at?->timezone('Africa/Kinshasa')->format('d/m/Y à H:i')
+    ?? now()->timezone('Africa/Kinshasa')->format('d/m/Y à H:i');
 @endphp
 @component('mail::message')
 # Échec de paiement — SDev Academy
 
-Un paiement d'inscription n'a **pas abouti**.
+Un paiement d'inscription **n'a pas abouti**. Voici le résumé pour investigation.
 
 @component('mail::panel')
-**Référence :** {{ $payment->reference ?? '—' }}
+**Référence** — {{ $payment->reference ?? '—' }}
 
-**Session :** {{ $session?->title ?? '—' }}
+**Session** — {{ $session?->title ?? '—' }}
 
-**Participant :** {{ $studentName }}
+**Participant** — {{ $studentName }}
 
-**E-mail :** {{ $student?->email ?? '—' }}
+**E-mail** — {{ $student?->email ?? '—' }}
 
-**Montant :** {{ number_format((float) $payment->amount, 2, ',', ' ') }} {{ $payment->currency }}
+**Montant** — {{ number_format((float) $payment->amount, 2, ',', ' ') }} {{ $payment->currency }}
 
-**Méthode :** {{ $payment->payment_method ?? $payment->channel ?? '—' }}
+**Méthode** — {{ $presenter->paymentMethodLabel() }}
 
-**Contexte :** {{ $contextLabel }}
+**Contexte** — {{ $contextLabel }}
 
-**Raison :** {{ $payment->failure_reason ?? 'Non précisé' }}
+**Raison** — {{ $payment->failure_reason ?? 'Non précisé' }}
 
-**Date :** {{ $payment->failed_at?->timezone('Africa/Kinshasa')->format('d/m/Y H:i') ?? now()->timezone('Africa/Kinshasa')->format('d/m/Y H:i') }}
+**Date** — {{ $failedAt }} (Kinshasa)
 @endcomponent
 
-**Réponse serveur (FlexPay / API) :**
+@if(count($serverLines) > 0)
+## Détail technique FlexPay
 
-@if($serverResponse !== '—')
-```
-{{ $serverResponse }}
-```
+@component('mail::table')
+| Champ | Valeur |
+|:-----:|:-------|
+@foreach($serverLines as $line)
+| **{{ $line['label'] }}** | {{ $line['value'] }} |
+@endforeach
+@endcomponent
 @else
-_Aucune réponse serveur enregistrée._
+_Aucune réponse serveur enregistrée pour cet échec._
 @endif
 
 @component('mail::button', ['url' => $adminPaymentUrl, 'color' => 'primary'])
-Voir dans le dashboard
+Ouvrir dans le dashboard
 @endcomponent
 
 {{ $brandName }} — Surveillance paiements Academy

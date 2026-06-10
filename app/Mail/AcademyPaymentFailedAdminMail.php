@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\SessionPayment;
+use App\Support\PaymentFailurePresenter;
 use Filament\Facades\Filament;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -49,6 +50,8 @@ class AcademyPaymentFailedAdminMail extends Mailable
       .'/session-payments/'.$this->payment->id.'/edit'
     );
 
+    $presenter = new PaymentFailurePresenter($this->payment);
+
     return new Content(
       markdown: 'emails.academy.payment-failed-admin',
       with: [
@@ -57,6 +60,8 @@ class AcademyPaymentFailedAdminMail extends Mailable
         'session' => $session,
         'contextLabel' => SessionPayment::failureContextLabel($this->payment->failure_context),
         'adminPaymentUrl' => $adminPaymentUrl,
+        'presenter' => $presenter,
+        'serverLines' => $presenter->serverResponseLines(),
       ],
     );
   }
