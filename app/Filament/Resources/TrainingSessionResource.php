@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TrainingSessionResource\Pages;
 use App\Models\TrainingSession;
+use App\Support\MobileMoneyOperators;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -132,15 +133,18 @@ class TrainingSessionResource extends Resource
               ->default('USD')
               ->visible(fn (Get $get): bool => ! $get('is_free'))
               ->required(fn (Get $get): bool => ! $get('is_free')),
-            Forms\Components\Toggle::make('payment_mobile_money_enabled')
-              ->label('Afficher Mobile Money')
-              ->default(true)
-              ->helperText('Désactivez pour masquer ce moyen sur le formulaire d\'inscription.')
-              ->visible(fn (Get $get): bool => ! $get('is_free')),
+            Forms\Components\CheckboxList::make('enabled_mobile_operators')
+              ->label('Opérateurs Mobile Money visibles')
+              ->options(MobileMoneyOperators::labels())
+              ->default(MobileMoneyOperators::ALL)
+              ->columns(2)
+              ->helperText('Décochez un opérateur pour le masquer sur le formulaire d\'inscription.')
+              ->visible(fn (Get $get): bool => ! $get('is_free'))
+              ->columnSpanFull(),
             Forms\Components\Toggle::make('payment_card_enabled')
               ->label('Afficher carte bancaire')
               ->default(true)
-              ->helperText('Désactivez pour masquer ce moyen sur le formulaire d\'inscription.')
+              ->helperText('Désactivez pour masquer le paiement par carte sur le formulaire.')
               ->visible(fn (Get $get): bool => ! $get('is_free')),
           ])
           ->columns(2),

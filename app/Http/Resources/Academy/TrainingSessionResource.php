@@ -51,6 +51,7 @@ class TrainingSessionResource extends JsonResource
       'exchange_rate_usd_cdf' => CurrencyConverter::usdToCdfRate(),
       'payment_mobile_money_enabled' => $this->acceptsMobileMoneyPayment(),
       'payment_card_enabled' => $this->acceptsCardPayment(),
+      'enabled_mobile_operators' => $this->enabledMobileOperators(),
       'cover_image' => $this->coverImageUrl(),
       'cover_image_url' => $this->coverImageUrl(),
       'spot_video_type' => $this->spot_video_type ?? 'none',

@@ -68,6 +68,15 @@ class AcademyPaymentController extends BaseController
 
     if ($validated['channel'] === 'mobile_money') {
       $operator = $validated['mobile_operator'] ?? 'mpesa';
+      $enabledOperators = $session->enabledMobileOperators();
+
+      if ($enabledOperators === []) {
+        return $this->handleError('Le paiement Mobile Money n\'est pas disponible pour cette session.', [], 422);
+      }
+
+      if (! in_array($operator, $enabledOperators, true)) {
+        return $this->handleError('Cet opérateur Mobile Money n\'est pas disponible pour cette session.', [], 422);
+      }
       $phoneCheck = MobileMoneyValidation::validateForOperator(
         $validated['phone'] ?? '',
         $operator

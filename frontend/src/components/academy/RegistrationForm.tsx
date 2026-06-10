@@ -35,13 +35,40 @@ interface RegistrationFormProps {
 
 type WizardStep = "personal" | "profile" | "summary" | "payment" | "done";
 
+const ALL_MOBILE_OPERATORS: MobileMoneyOperator[] = [
+  "mpesa",
+  "airtel",
+  "orange",
+  "afrimoney",
+];
+
 /**
- * Retourne les moyens de paiement activés pour la session (défaut : les deux).
+ * Retourne les opérateurs Mobile Money activés pour la session.
+ */
+function enabledMobileOperators(session: TrainingSession): MobileMoneyOperator[] {
+  if (
+    session.enabled_mobile_operators &&
+    session.enabled_mobile_operators.length > 0
+  ) {
+    return session.enabled_mobile_operators.filter((operator): operator is MobileMoneyOperator =>
+      ALL_MOBILE_OPERATORS.includes(operator)
+    );
+  }
+
+  if (session.payment_mobile_money_enabled === false) {
+    return [];
+  }
+
+  return ALL_MOBILE_OPERATORS;
+}
+
+/**
+ * Retourne les canaux de paiement activés (Mobile Money si au moins un opérateur).
  */
 function enabledPaymentChannels(session: TrainingSession): PaymentChannel[] {
   const channels: PaymentChannel[] = [];
 
-  if (session.payment_mobile_money_enabled !== false) {
+  if (enabledMobileOperators(session).length > 0) {
     channels.push("mobile_money");
   }
 
@@ -145,9 +172,21 @@ export function RegistrationForm({
   const isPaidSession = session.is_paid === true && !session.is_free;
   const availablePaymentChannels = useMemo(
     () => enabledPaymentChannels(session),
-    [session.payment_mobile_money_enabled, session.payment_card_enabled]
+    [
+      session.payment_mobile_money_enabled,
+      session.payment_card_enabled,
+      session.enabled_mobile_operators,
+    ]
+  );
+  const availableMobileOperators = useMemo(
+    () =>
+      MOBILE_OPERATORS.filter((operator) =>
+        enabledMobileOperators(session).includes(operator.id)
+      ),
+    [session.enabled_mobile_operators, session.payment_mobile_money_enabled]
   );
   const showPaymentMethodChoice = availablePaymentChannels.length > 1;
+  const showMobileOperatorChoice = availableMobileOperators.length > 1;
   const benefits = useRegistrationBenefits(session.slug, session);
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
@@ -182,6 +221,22 @@ export function RegistrationForm({
       }
     }
   }, [step, availablePaymentChannels, channel]);
+
+  useEffect(() => {
+    if (step !== "payment" || channel !== "mobile_money") {
+      return;
+    }
+
+    if (availableMobileOperators.length !== 1) {
+      return;
+    }
+
+    const onlyOperator = availableMobileOperators[0].id;
+
+    if (mobileOperator !== onlyOperator) {
+      setMobileOperator(onlyOperator);
+    }
+  }, [step, channel, availableMobileOperators, mobileOperator]);
 
   const initialFormState: FormState = {
     firstname: "",
@@ -439,7 +494,12 @@ export function RegistrationForm({
     }
 
     if (channel === "mobile_money") {
-      if (!mobileOperator) {
+      if (availableMobileOperators.length === 0) {
+        setError("Aucun opérateur Mobile Money n'est disponible pour cette session.");
+        return;
+      }
+
+      if (!mobileOperator || !enabledMobileOperators(session).includes(mobileOperator)) {
         setError("Choisissez votre opérateur Mobile Money.");
         return;
       }
@@ -772,9 +832,9 @@ export function RegistrationForm({
                     onClick={() => setChannel("mobile_money")}
                   >
                     <span className="font-semibold text-ink">Mobile Money</span>
-                    <span className="mt-1 block text-xs text-muted">
-                      M-Pesa, Airtel, Orange, Afrimoney
-                    </span>
+                <span className="mt-1 block text-xs text-muted">
+                  {availableMobileOperators.map((operator) => operator.label).join(", ")}
+                </span>
                   </button>
                 )}
                 {availablePaymentChannels.includes("card") && (
@@ -811,38 +871,65 @@ export function RegistrationForm({
 
           {channel === "mobile_money" && (
             <>
-              <div>
-                <p className="mb-2 text-sm font-medium text-ink">
-                  Opérateur *
+              {availableMobileOperators.length === 0 ? (
+                <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Aucun opérateur Mobile Money n&apos;est configuré pour cette
+                  session.
                 </p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {MOBILE_OPERATORS.map((op) => (
-                    <button
-                      key={op.id}
-                      type="button"
-                      className={`rounded-xl border px-3 py-3 text-center text-sm transition ${
-                        mobileOperator === op.id
-                          ? "border-academy/50 bg-academy-soft text-academy"
-                          : "border-line text-ink-soft hover:border-academy/30"
-                      }`}
-                      onClick={() => setMobileOperator(op.id)}
-                    >
-                      <span className="block font-medium">{op.label}</span>
-                      <span className="text-xs opacity-70">{op.hint}</span>
-                    </button>
-                  ))}
+              ) : showMobileOperatorChoice ? (
+                <div>
+                  <p className="mb-2 text-sm font-medium text-ink">
+                    Opérateur *
+                  </p>
+                  <div
+                    className={`grid gap-2 ${
+                      availableMobileOperators.length >= 4
+                        ? "grid-cols-2 sm:grid-cols-4"
+                        : availableMobileOperators.length === 3
+                          ? "grid-cols-2 sm:grid-cols-3"
+                          : "grid-cols-2"
+                    }`}
+                  >
+                    {availableMobileOperators.map((op) => (
+                      <button
+                        key={op.id}
+                        type="button"
+                        className={`rounded-xl border px-3 py-3 text-center text-sm transition ${
+                          mobileOperator === op.id
+                            ? "border-academy/50 bg-academy-soft text-academy"
+                            : "border-line text-ink-soft hover:border-academy/30"
+                        }`}
+                        onClick={() => setMobileOperator(op.id)}
+                      >
+                        <span className="block font-medium">{op.label}</span>
+                        <span className="text-xs opacity-70">{op.hint}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <input
-                required
-                placeholder="Téléphone Mobile Money (243…) *"
-                className={inputClass}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-              <p className="text-xs text-muted">
-                Le numéro doit commencer par 243 et correspondre à l&apos;opérateur choisi.
-              </p>
+              ) : (
+                <p className="text-sm text-ink-soft">
+                  Opérateur :{" "}
+                  <strong className="text-ink">
+                    {availableMobileOperators[0]?.label}
+                  </strong>
+                </p>
+              )}
+              {availableMobileOperators.length > 0 && (
+                <>
+                  <input
+                    required
+                    placeholder="Téléphone Mobile Money (243…) *"
+                    className={inputClass}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                  <p className="text-xs text-muted">
+                    Le numéro doit commencer par 243 et correspondre à
+                    l&apos;opérateur choisi.
+                  </p>
+                </>
+              )}
             </>
           )}
 

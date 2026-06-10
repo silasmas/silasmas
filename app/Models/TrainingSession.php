@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Support\FrontendUrl;
 use App\Support\MediaUrl;
+use App\Support\MobileMoneyOperators;
 use Illuminate\Support\Str;
 
 /**
@@ -30,6 +31,7 @@ class TrainingSession extends Model
     'notify_by_whatsapp' => 'boolean',
     'payment_mobile_money_enabled' => 'boolean',
     'payment_card_enabled' => 'boolean',
+    'enabled_mobile_operators' => 'array',
     'session_resources' => 'array',
     'registration_benefits' => 'array',
   ];
@@ -115,11 +117,31 @@ class TrainingSession extends Model
   }
 
   /**
+   * Opérateurs Mobile Money visibles sur le formulaire d'inscription.
+   *
+   * @return list<string> mpesa, airtel, orange, afrimoney
+   */
+  public function enabledMobileOperators(): array
+  {
+    $operators = MobileMoneyOperators::normalizeEnabled($this->enabled_mobile_operators);
+
+    if ($operators !== [] || $this->enabled_mobile_operators !== null) {
+      return $operators;
+    }
+
+    if ($this->payment_mobile_money_enabled === false) {
+      return [];
+    }
+
+    return MobileMoneyOperators::ALL;
+  }
+
+  /**
    * Indique si le paiement Mobile Money est proposé sur le formulaire.
    */
   public function acceptsMobileMoneyPayment(): bool
   {
-    return (bool) ($this->payment_mobile_money_enabled ?? true);
+    return $this->enabledMobileOperators() !== [];
   }
 
   /**
