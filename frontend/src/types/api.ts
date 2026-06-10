@@ -66,6 +66,8 @@ export interface TrainingSession {
   notify_by_email?: boolean;
   notify_by_sms?: boolean;
   notify_by_whatsapp?: boolean;
+  payment_mobile_money_enabled?: boolean;
+  payment_card_enabled?: boolean;
   confidentiality_notice?: string | null;
   participant_benefits?: string | null;
   registration_benefits?: string[];

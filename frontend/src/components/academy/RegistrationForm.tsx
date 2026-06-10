@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CountrySelect } from "@/components/form/CountrySelect";
 import { DEFAULT_COUNTRY } from "@/data/countries";
 import {
@@ -34,6 +34,23 @@ interface RegistrationFormProps {
 }
 
 type WizardStep = "personal" | "profile" | "summary" | "payment" | "done";
+
+/**
+ * Retourne les moyens de paiement activés pour la session (défaut : les deux).
+ */
+function enabledPaymentChannels(session: TrainingSession): PaymentChannel[] {
+  const channels: PaymentChannel[] = [];
+
+  if (session.payment_mobile_money_enabled !== false) {
+    channels.push("mobile_money");
+  }
+
+  if (session.payment_card_enabled !== false) {
+    channels.push("card");
+  }
+
+  return channels;
+}
 
 interface FormState {
   firstname: string;
@@ -126,6 +143,11 @@ export function RegistrationForm({
     ? "font-display text-3xl tracking-tight md:text-4xl"
     : "font-display text-2xl tracking-tight";
   const isPaidSession = session.is_paid === true && !session.is_free;
+  const availablePaymentChannels = useMemo(
+    () => enabledPaymentChannels(session),
+    [session.payment_mobile_money_enabled, session.payment_card_enabled]
+  );
+  const showPaymentMethodChoice = availablePaymentChannels.length > 1;
   const benefits = useRegistrationBenefits(session.slug, session);
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
@@ -144,6 +166,22 @@ export function RegistrationForm({
   const [verifyAttempts, setVerifyAttempts] = useState(0);
   const [participantToken, setParticipantToken] = useState<string | null>(null);
   const [resumeInfo, setResumeInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (step !== "payment" || availablePaymentChannels.length !== 1) {
+      return;
+    }
+
+    const onlyChannel = availablePaymentChannels[0];
+
+    if (channel !== onlyChannel) {
+      setChannel(onlyChannel);
+
+      if (onlyChannel === "card") {
+        setMobileOperator("");
+      }
+    }
+  }, [step, availablePaymentChannels, channel]);
 
   const initialFormState: FormState = {
     firstname: "",
@@ -390,7 +428,12 @@ export function RegistrationForm({
       return;
     }
 
-    if (!channel) {
+    if (availablePaymentChannels.length === 0) {
+      setError("Aucun moyen de paiement n'est disponible pour cette session.");
+      return;
+    }
+
+    if (!channel || !availablePaymentChannels.includes(channel)) {
       setError("Choisissez un moyen de paiement.");
       return;
     }
@@ -707,44 +750,64 @@ export function RegistrationForm({
             </span>
           </p>
 
-          <div>
-            <p className="mb-2 text-sm font-medium text-ink">
-              Moyen de paiement *
+          {availablePaymentChannels.length === 0 ? (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Le paiement en ligne n&apos;est pas configuré pour cette session.
+              Contactez l&apos;équipe SDev Academy.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                className={`rounded-2xl border p-4 text-left transition ${
-                  channel === "mobile_money"
-                    ? "border-academy/50 bg-academy-soft"
-                    : "border-line hover:border-academy/30"
-                }`}
-                onClick={() => setChannel("mobile_money")}
-              >
-                <span className="font-semibold text-ink">Mobile Money</span>
-                <span className="mt-1 block text-xs text-muted">
-                  M-Pesa, Airtel, Orange, Afrimoney
-                </span>
-              </button>
-              <button
-                type="button"
-                className={`rounded-2xl border p-4 text-left transition ${
-                  channel === "card"
-                    ? "border-academy/50 bg-academy-soft"
-                    : "border-line hover:border-academy/30"
-                }`}
-                onClick={() => {
-                  setChannel("card");
-                  setMobileOperator("");
-                }}
-              >
-                <span className="font-semibold text-ink">Carte bancaire</span>
-                <span className="mt-1 block text-xs text-muted">
-                  Visa, Mastercard
-                </span>
-              </button>
+          ) : showPaymentMethodChoice ? (
+            <div>
+              <p className="mb-2 text-sm font-medium text-ink">
+                Moyen de paiement *
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {availablePaymentChannels.includes("mobile_money") && (
+                  <button
+                    type="button"
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      channel === "mobile_money"
+                        ? "border-academy/50 bg-academy-soft"
+                        : "border-line hover:border-academy/30"
+                    }`}
+                    onClick={() => setChannel("mobile_money")}
+                  >
+                    <span className="font-semibold text-ink">Mobile Money</span>
+                    <span className="mt-1 block text-xs text-muted">
+                      M-Pesa, Airtel, Orange, Afrimoney
+                    </span>
+                  </button>
+                )}
+                {availablePaymentChannels.includes("card") && (
+                  <button
+                    type="button"
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      channel === "card"
+                        ? "border-academy/50 bg-academy-soft"
+                        : "border-line hover:border-academy/30"
+                    }`}
+                    onClick={() => {
+                      setChannel("card");
+                      setMobileOperator("");
+                    }}
+                  >
+                    <span className="font-semibold text-ink">Carte bancaire</span>
+                    <span className="mt-1 block text-xs text-muted">
+                      Visa, Mastercard
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-sm text-ink-soft">
+              Paiement par{" "}
+              <strong className="text-ink">
+                {availablePaymentChannels[0] === "mobile_money"
+                  ? "Mobile Money"
+                  : "carte bancaire"}
+              </strong>
+            </p>
+          )}
 
           {channel === "mobile_money" && (
             <>
@@ -824,7 +887,9 @@ export function RegistrationForm({
             <button
               type="submit"
               className="btn btn-gold btn-lg"
-              disabled={loading || polling}
+              disabled={
+                loading || polling || availablePaymentChannels.length === 0
+              }
             >
               {loading || polling ? "Traitement..." : "Payer maintenant"}
             </button>

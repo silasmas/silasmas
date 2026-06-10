@@ -132,6 +132,16 @@ class TrainingSessionResource extends Resource
               ->default('USD')
               ->visible(fn (Get $get): bool => ! $get('is_free'))
               ->required(fn (Get $get): bool => ! $get('is_free')),
+            Forms\Components\Toggle::make('payment_mobile_money_enabled')
+              ->label('Afficher Mobile Money')
+              ->default(true)
+              ->helperText('Désactivez pour masquer ce moyen sur le formulaire d\'inscription.')
+              ->visible(fn (Get $get): bool => ! $get('is_free')),
+            Forms\Components\Toggle::make('payment_card_enabled')
+              ->label('Afficher carte bancaire')
+              ->default(true)
+              ->helperText('Désactivez pour masquer ce moyen sur le formulaire d\'inscription.')
+              ->visible(fn (Get $get): bool => ! $get('is_free')),
           ])
           ->columns(2),
         Forms\Components\Section::make('Vidéo spot')

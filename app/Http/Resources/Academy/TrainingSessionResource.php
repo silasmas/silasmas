@@ -49,6 +49,8 @@ class TrainingSessionResource extends JsonResource
         ? CurrencyConverter::dualAmounts((float) $this->price, $this->registrationCurrency())['cdf']
         : null,
       'exchange_rate_usd_cdf' => CurrencyConverter::usdToCdfRate(),
+      'payment_mobile_money_enabled' => $this->acceptsMobileMoneyPayment(),
+      'payment_card_enabled' => $this->acceptsCardPayment(),
       'cover_image' => $this->coverImageUrl(),
       'cover_image_url' => $this->coverImageUrl(),
       'spot_video_type' => $this->spot_video_type ?? 'none',

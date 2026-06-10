@@ -50,6 +50,22 @@ class AcademyPaymentController extends BaseController
       return $this->handleError('Inscription introuvable ou annulée.', [], 422);
     }
 
+    $session = $registration->trainingSession;
+
+    if ($session === null) {
+      return $this->handleError('Session introuvable.', [], 422);
+    }
+
+    $enabledChannels = $session->enabledPaymentChannels();
+
+    if ($enabledChannels === []) {
+      return $this->handleError('Aucun moyen de paiement n\'est disponible pour cette session.', [], 422);
+    }
+
+    if (! in_array($validated['channel'], $enabledChannels, true)) {
+      return $this->handleError('Ce moyen de paiement n\'est pas disponible pour cette session.', [], 422);
+    }
+
     if ($validated['channel'] === 'mobile_money') {
       $operator = $validated['mobile_operator'] ?? 'mpesa';
       $phoneCheck = MobileMoneyValidation::validateForOperator(

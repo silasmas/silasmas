@@ -28,6 +28,8 @@ class TrainingSession extends Model
     'notify_by_email' => 'boolean',
     'notify_by_sms' => 'boolean',
     'notify_by_whatsapp' => 'boolean',
+    'payment_mobile_money_enabled' => 'boolean',
+    'payment_card_enabled' => 'boolean',
     'session_resources' => 'array',
     'registration_benefits' => 'array',
   ];
@@ -110,6 +112,42 @@ class TrainingSession extends Model
   public function registrationCurrency(): string
   {
     return strtoupper($this->currency ?? 'USD');
+  }
+
+  /**
+   * Indique si le paiement Mobile Money est proposé sur le formulaire.
+   */
+  public function acceptsMobileMoneyPayment(): bool
+  {
+    return (bool) ($this->payment_mobile_money_enabled ?? true);
+  }
+
+  /**
+   * Indique si le paiement par carte est proposé sur le formulaire.
+   */
+  public function acceptsCardPayment(): bool
+  {
+    return (bool) ($this->payment_card_enabled ?? true);
+  }
+
+  /**
+   * Canaux de paiement activés pour cette session.
+   *
+   * @return list<string> mobile_money, card
+   */
+  public function enabledPaymentChannels(): array
+  {
+    $channels = [];
+
+    if ($this->acceptsMobileMoneyPayment()) {
+      $channels[] = 'mobile_money';
+    }
+
+    if ($this->acceptsCardPayment()) {
+      $channels[] = 'card';
+    }
+
+    return $channels;
   }
 
   /**
