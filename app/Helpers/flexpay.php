@@ -71,6 +71,11 @@ if (! function_exists('initRequeteFlexPayMobile')) {
     return [
       'reponse' => false,
       'message' => $responseBody['message'] ?? 'Échec de la transaction Mobile Money',
+      'server_response' => [
+        'source' => 'flexpay_mobile',
+        'http_status' => $response->status(),
+        'body' => $responseBody ?? $response->body(),
+      ],
     ];
   }
 }

@@ -8,6 +8,7 @@ use App\Services\AcademyRegistrationNotifier;
 use App\Support\FrontendUrl;
 use App\Support\ParticipantToken;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 /**
  * Retours navigateur après paiement carte FlexPay (redirection vers le front Next.js).
@@ -23,6 +24,7 @@ class AcademyPaymentReturnController extends Controller
    * @param string $status success|cancel|decline
    */
   public function handle(
+    Request $request,
     string $reference,
     float $amount,
     string $currency,
@@ -73,7 +75,15 @@ class AcademyPaymentReturnController extends Controller
           $payment,
           'Paiement annulé par l\'utilisateur',
           'card_cancel',
-          'cancelled'
+          'cancelled',
+          [
+            'source' => 'flexpay_card_return',
+            'return_status' => $status,
+            'reference' => $reference,
+            'amount' => $amount,
+            'currency' => $currency,
+            'query' => $request->query(),
+          ]
         );
 
         $query = http_build_query([
@@ -87,7 +97,16 @@ class AcademyPaymentReturnController extends Controller
         app(AcademyPaymentFailureNotifier::class)->recordFailure(
           $payment,
           'Paiement refusé par la banque ou l\'opérateur',
-          'card_decline'
+          'card_decline',
+          'failed',
+          [
+            'source' => 'flexpay_card_return',
+            'return_status' => $status,
+            'reference' => $reference,
+            'amount' => $amount,
+            'currency' => $currency,
+            'query' => $request->query(),
+          ]
         );
 
         $query = http_build_query([
@@ -102,7 +121,16 @@ class AcademyPaymentReturnController extends Controller
           app(AcademyPaymentFailureNotifier::class)->recordFailure(
             $payment,
             'Retour paiement carte inconnu ou en erreur',
-            'card_error'
+            'card_error',
+            'failed',
+            [
+              'source' => 'flexpay_card_return',
+              'return_status' => $status,
+              'reference' => $reference,
+              'amount' => $amount,
+              'currency' => $currency,
+              'query' => $request->query(),
+            ]
           );
         }
 

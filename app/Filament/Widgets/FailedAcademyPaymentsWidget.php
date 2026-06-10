@@ -75,9 +75,13 @@ class FailedAcademyPaymentsWidget extends BaseWidget
           ->label('Contexte')
           ->formatStateUsing(fn (?string $state): string => SessionPayment::failureContextLabel($state)),
         Tables\Columns\TextColumn::make('failure_reason')
-          ->label('Motif')
+          ->label('Raison')
           ->limit(40)
           ->tooltip(fn (?string $state): ?string => $state),
+        Tables\Columns\TextColumn::make('failure_server_response')
+          ->label('Réponse serveur')
+          ->limit(45)
+          ->tooltip(fn (SessionPayment $record): string => $record->formattedServerResponse()),
         Tables\Columns\TextColumn::make('failed_at')
           ->label('Échec le')
           ->dateTime('d/m/Y H:i')

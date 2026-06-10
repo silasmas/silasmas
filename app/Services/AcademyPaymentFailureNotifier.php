@@ -19,13 +19,15 @@ class AcademyPaymentFailureNotifier
    * @param string $reason Message lisible décrivant l'échec
    * @param string $context Code technique (mobile_init, card_decline, etc.)
    * @param string $status Statut local : failed ou cancelled
+   * @param array<string, mixed>|string|null $serverResponse Réponse brute FlexPay / API
    * @return void
    */
   public function recordFailure(
     SessionPayment $payment,
     string $reason,
     string $context,
-    string $status = 'failed'
+    string $status = 'failed',
+    array|string|null $serverResponse = null
   ): void {
     if ($payment->status === 'paid') {
       return;
@@ -34,6 +36,7 @@ class AcademyPaymentFailureNotifier
     $payment->loadMissing(['registration.student', 'trainingSession', 'student']);
 
     $normalizedReason = trim($reason) !== '' ? trim($reason) : 'Échec de paiement sans détail';
+    $encodedResponse = SessionPayment::encodeServerResponse($serverResponse);
     $shouldNotify = $payment->admin_notified_at === null
       || $payment->failure_context !== $context;
 
@@ -41,6 +44,7 @@ class AcademyPaymentFailureNotifier
       'status' => $status,
       'failure_context' => $context,
       'failure_reason' => $normalizedReason,
+      'failure_server_response' => $encodedResponse,
       'failed_at' => now(),
     ]);
 

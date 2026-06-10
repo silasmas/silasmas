@@ -83,7 +83,9 @@ class AcademyPaymentController extends BaseController
         app(AcademyPaymentFailureNotifier::class)->recordFailure(
           $payment,
           $rep['message'] ?? 'Échec du paiement Mobile Money',
-          'mobile_init'
+          'mobile_init',
+          'failed',
+          $rep['server_response'] ?? null
         );
 
         return $this->handleError($rep['message'] ?? 'Échec du paiement Mobile Money', [], 400);
@@ -128,7 +130,9 @@ class AcademyPaymentController extends BaseController
     app(AcademyPaymentFailureNotifier::class)->recordFailure(
       $payment,
       $retour['message'] ?? 'Échec de l\'initiation du paiement',
-      'card_init'
+      'card_init',
+      'failed',
+      $retour['server_response'] ?? null
     );
 
     return $this->handleError($retour['message'] ?? 'Échec de l\'initiation du paiement', [], 400);
@@ -173,7 +177,8 @@ class AcademyPaymentController extends BaseController
         $payment,
         $resolved['message'] ?: 'Paiement annulé',
         'polling_cancelled',
-        'cancelled'
+        'cancelled',
+        $resolved['server_response'] ?? null
       );
 
       return $this->handleResponse([
@@ -203,7 +208,9 @@ class AcademyPaymentController extends BaseController
       app(AcademyPaymentFailureNotifier::class)->recordFailure(
         $payment,
         $resolved['message'] ?: 'Paiement non confirmé',
-        'polling_failed'
+        'polling_failed',
+        'failed',
+        $resolved['server_response'] ?? null
       );
     }
 

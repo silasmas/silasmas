@@ -126,9 +126,15 @@ class SessionPaymentResource extends Resource
           ->dehydrated(false)
           ->formatStateUsing(fn (?string $state): string => SessionPayment::failureContextLabel($state)),
         Forms\Components\Textarea::make('failure_reason')
-          ->label('Motif échec')
+          ->label('Raison de l\'échec')
           ->rows(3)
           ->disabled()
+          ->columnSpanFull(),
+        Forms\Components\Textarea::make('failure_server_response')
+          ->label('Réponse serveur (FlexPay / API)')
+          ->rows(10)
+          ->disabled()
+          ->formatStateUsing(fn (?string $state, SessionPayment $record): string => $record->formattedServerResponse())
           ->columnSpanFull(),
         Forms\Components\DateTimePicker::make('failed_at')
           ->label('Échec le')
@@ -184,9 +190,14 @@ class SessionPaymentResource extends Resource
           ->toggleable(isToggledHiddenByDefault: true)
           ->formatStateUsing(fn (?string $state): string => SessionPayment::failureContextLabel($state)),
         Tables\Columns\TextColumn::make('failure_reason')
-          ->label('Motif échec')
+          ->label('Raison')
           ->limit(35)
           ->tooltip(fn (?string $state): ?string => $state)
+          ->toggleable(),
+        Tables\Columns\TextColumn::make('failure_server_response')
+          ->label('Réponse serveur')
+          ->limit(40)
+          ->tooltip(fn (SessionPayment $record): string => $record->formattedServerResponse())
           ->toggleable(),
         Tables\Columns\TextColumn::make('failed_at')
           ->label('Échec le')

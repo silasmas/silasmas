@@ -68,6 +68,11 @@ class FlexPayService
     return [
       'rep' => false,
       'message' => $json['message'] ?? 'Réponse invalide de l\'API FlexPay',
+      'server_response' => [
+        'source' => 'flexpay_card',
+        'body' => is_array($json) ? $json : null,
+        'raw' => is_string($curlResponse) ? $curlResponse : null,
+      ],
     ];
   }
 }

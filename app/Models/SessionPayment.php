@@ -75,4 +75,51 @@ class SessionPayment extends Model
       default => $context ?? 'Inconnu',
     };
   }
+
+  /**
+   * Encode une réponse serveur pour stockage en base.
+   *
+   * @param array<string, mixed>|string|null $response Payload API
+   * @return string|null JSON formaté ou texte brut
+   */
+  public static function encodeServerResponse(array|string|null $response): ?string
+  {
+    if ($response === null) {
+      return null;
+    }
+
+    if (is_string($response)) {
+      $trimmed = trim($response);
+
+      return $trimmed !== '' ? $trimmed : null;
+    }
+
+    $encoded = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+    return $encoded !== false ? $encoded : null;
+  }
+
+  /**
+   * Formate la réponse serveur pour affichage admin / e-mail.
+   *
+   * @return string Texte lisible ou tiret si vide
+   */
+  public function formattedServerResponse(): string
+  {
+    $raw = trim((string) ($this->failure_server_response ?? ''));
+
+    if ($raw === '') {
+      return '—';
+    }
+
+    $decoded = json_decode($raw, true);
+
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+      $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+      return $encoded !== false ? $encoded : $raw;
+    }
+
+    return $raw;
+  }
 }

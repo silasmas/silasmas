@@ -66,7 +66,11 @@ class AcademyPaymentCallbackController extends Controller
         $payment,
         (string) $message,
         'webhook_failed',
-        'cancelled'
+        'cancelled',
+        [
+          'source' => 'flexpay_webhook',
+          'payload' => $request->all(),
+        ]
       );
 
       return response()->json(['success' => true, 'message' => 'Échec enregistré']);
@@ -75,7 +79,12 @@ class AcademyPaymentCallbackController extends Controller
     app(AcademyPaymentFailureNotifier::class)->recordFailure(
       $payment,
       (string) $message,
-      'webhook_failed'
+      'webhook_failed',
+      'failed',
+      [
+        'source' => 'flexpay_webhook',
+        'payload' => $request->all(),
+      ]
     );
 
     return response()->json(['success' => true, 'message' => 'Échec enregistré']);
