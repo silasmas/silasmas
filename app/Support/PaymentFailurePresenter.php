@@ -65,6 +65,33 @@ class PaymentFailurePresenter
       ];
     }
 
+    if (! empty($data['payload_format'])) {
+      $lines[] = [
+        'label' => 'Format API',
+        'value' => (string) $data['payload_format'],
+      ];
+    }
+
+    if (! empty($data['endpoint'])) {
+      $lines[] = [
+        'label' => 'Endpoint',
+        'value' => (string) $data['endpoint'],
+      ];
+    }
+
+    $request = $data['request'] ?? null;
+
+    if (is_array($request)) {
+      $phone = $request['customer_phonenumber'] ?? $request['phone'] ?? null;
+
+      if ($phone !== null && $phone !== '') {
+        $lines[] = [
+          'label' => 'Téléphone envoyé',
+          'value' => (string) $phone,
+        ];
+      }
+    }
+
     if (isset($data['http_status']) && $source !== 'flexpay_check') {
       $lines[] = [
         'label' => 'Code HTTP',
@@ -141,11 +168,24 @@ class PaymentFailurePresenter
     if (array_key_exists('code', $body) && $body['code'] !== null && $body['code'] !== '') {
       $code = (string) $body['code'];
       $isNumericCode = is_numeric($code);
+      $errorText = $isNumericCode ? $code.' — '.self::flexpayCodeLabel($code) : $code;
 
       $lines[] = [
         'label' => $isNumericCode ? 'Code FlexPay' : 'Erreur FlexPay',
-        'value' => $isNumericCode ? $code.' — '.self::flexpayCodeLabel($code) : $code,
+        'value' => $errorText,
       ];
+
+      if (
+        $source === 'flexpay_mobile'
+        && ! $isNumericCode
+        && stripos($errorText, 'carte') !== false
+      ) {
+        $lines[] = [
+          'label' => 'Note',
+          'value' => 'Message FlexPay trompeur : la requête était bien en Mobile Money. '
+            .'Souvent causé par un mauvais format JSON vers paymentService (corrigé côté API).',
+        ];
+      }
     }
 
     if (! empty($body['message'])) {
