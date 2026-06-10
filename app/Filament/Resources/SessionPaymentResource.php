@@ -30,6 +30,28 @@ class SessionPaymentResource extends Resource
   protected static ?string $navigationLabel = 'Paiements';
 
   /**
+   * Badge rouge si des paiements ont échoué.
+   *
+   * @return string|null Nombre d'échecs ou null
+   */
+  public static function getNavigationBadge(): ?string
+  {
+    $count = static::getModel()::failedOrCancelled()->count();
+
+    return $count > 0 ? (string) $count : null;
+  }
+
+  /**
+   * Couleur du badge navigation.
+   *
+   * @return string|null Couleur Filament
+   */
+  public static function getNavigationBadgeColor(): ?string
+  {
+    return 'danger';
+  }
+
+  /**
    * Formulaire de création / édition.
    */
   public static function form(Form $form): Form
@@ -98,6 +120,22 @@ class SessionPaymentResource extends Resource
           ->label('Notes')
           ->rows(3)
           ->columnSpanFull(),
+        Forms\Components\TextInput::make('failure_context')
+          ->label('Contexte échec')
+          ->disabled()
+          ->dehydrated(false)
+          ->formatStateUsing(fn (?string $state): string => SessionPayment::failureContextLabel($state)),
+        Forms\Components\Textarea::make('failure_reason')
+          ->label('Motif échec')
+          ->rows(3)
+          ->disabled()
+          ->columnSpanFull(),
+        Forms\Components\DateTimePicker::make('failed_at')
+          ->label('Échec le')
+          ->disabled(),
+        Forms\Components\DateTimePicker::make('admin_notified_at')
+          ->label('Alerte admin envoyée le')
+          ->disabled(),
       ])
       ->columns(2);
   }
@@ -126,10 +164,35 @@ class SessionPaymentResource extends Resource
           ->color(fn (string $state): string => match ($state) {
             'paid' => 'success',
             'pending' => 'warning',
+            'processing' => 'info',
             'failed' => 'danger',
+            'cancelled' => 'danger',
             'refunded' => 'info',
             default => 'gray',
+          })
+          ->formatStateUsing(fn (string $state): string => match ($state) {
+            'pending' => 'En attente',
+            'processing' => 'En cours',
+            'paid' => 'Payé',
+            'failed' => 'Échoué',
+            'cancelled' => 'Annulé',
+            'refunded' => 'Remboursé',
+            default => $state,
           }),
+        Tables\Columns\TextColumn::make('failure_context')
+          ->label('Contexte')
+          ->toggleable(isToggledHiddenByDefault: true)
+          ->formatStateUsing(fn (?string $state): string => SessionPayment::failureContextLabel($state)),
+        Tables\Columns\TextColumn::make('failure_reason')
+          ->label('Motif échec')
+          ->limit(35)
+          ->tooltip(fn (?string $state): ?string => $state)
+          ->toggleable(),
+        Tables\Columns\TextColumn::make('failed_at')
+          ->label('Échec le')
+          ->dateTime('d/m/Y H:i')
+          ->sortable()
+          ->toggleable(),
         Tables\Columns\TextColumn::make('payment_method')
           ->label('Méthode')
           ->toggleable(),

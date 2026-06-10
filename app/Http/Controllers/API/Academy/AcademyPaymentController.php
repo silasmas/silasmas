@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Academy;
 
 use App\Http\Controllers\API\BaseController;
 use App\Models\SessionPayment;
+use App\Services\AcademyPaymentFailureNotifier;
 use App\Services\AcademyRegistrationNotifier;
 use App\Services\FlexPayCheckService;
 use App\Services\FlexPayService;
@@ -79,6 +80,12 @@ class AcademyPaymentController extends BaseController
       $rep = initRequeteFlexPayMobile($data, $payment);
 
       if (! ($rep['reponse'] ?? false)) {
+        app(AcademyPaymentFailureNotifier::class)->recordFailure(
+          $payment,
+          $rep['message'] ?? 'Échec du paiement Mobile Money',
+          'mobile_init'
+        );
+
         return $this->handleError($rep['message'] ?? 'Échec du paiement Mobile Money', [], 400);
       }
 
@@ -118,6 +125,12 @@ class AcademyPaymentController extends BaseController
       ], 'Redirection vers le paiement par carte');
     }
 
+    app(AcademyPaymentFailureNotifier::class)->recordFailure(
+      $payment,
+      $retour['message'] ?? 'Échec de l\'initiation du paiement',
+      'card_init'
+    );
+
     return $this->handleError($retour['message'] ?? 'Échec de l\'initiation du paiement', [], 400);
   }
 
@@ -156,7 +169,12 @@ class AcademyPaymentController extends BaseController
     }
 
     if ($resolved['cancelled']) {
-      $payment->update(['status' => 'cancelled']);
+      app(AcademyPaymentFailureNotifier::class)->recordFailure(
+        $payment,
+        $resolved['message'] ?: 'Paiement annulé',
+        'polling_cancelled',
+        'cancelled'
+      );
 
       return $this->handleResponse([
         'reponse' => false,
@@ -174,6 +192,19 @@ class AcademyPaymentController extends BaseController
         'message' => $resolved['message'],
         'orderNumber' => $payment->provider_reference,
       ], 'En attente');
+    }
+
+    if (
+      ! $resolved['pending']
+      && ! $resolved['paid']
+      && ! $resolved['cancelled']
+      && $resolved['status'] !== -1
+    ) {
+      app(AcademyPaymentFailureNotifier::class)->recordFailure(
+        $payment,
+        $resolved['message'] ?: 'Paiement non confirmé',
+        'polling_failed'
+      );
     }
 
     return $this->handleResponse([

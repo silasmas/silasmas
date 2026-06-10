@@ -50,6 +50,7 @@ return [
     'academy' => [
         'sms_webhook_url' => env('ACADEMY_SMS_WEBHOOK_URL'),
         'whatsapp_webhook_url' => env('ACADEMY_WHATSAPP_WEBHOOK_URL'),
+        'admin_alert_email' => env('ACADEMY_ADMIN_ALERT_EMAIL', 'ir-masimango@silasmas.com'),
     ],
 
 ];

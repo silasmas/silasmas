@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcademyPaymentCallbackController;
 use App\Http\Controllers\AcademyPaymentReturnController;
 use App\Http\Controllers\Web\AdminController;
 use App\Http\Controllers\Web\DeployController;
@@ -30,6 +31,11 @@ Route::post('addNewMessage', [AdminController::class, 'sendMessage'])->name('add
 | Retour paiement carte FlexPay (Academy) → redirection front Next.js
 |--------------------------------------------------------------------------
  */
+Route::post(
+  '/academy/payment/callback',
+  [AcademyPaymentCallbackController::class, 'handle']
+)->name('academy.payment.callback');
+
 Route::get(
   '/academy/payment/return/{reference}/{amount}/{currency}/{status}',
   [AcademyPaymentReturnController::class, 'handle']

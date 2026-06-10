@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SessionPayment;
+use App\Services\AcademyPaymentFailureNotifier;
 use App\Services\AcademyRegistrationNotifier;
 use App\Support\FrontendUrl;
 use App\Support\ParticipantToken;
@@ -68,8 +69,26 @@ class AcademyPaymentReturnController extends Controller
         return redirect($target);
 
       case 'cancel':
+        app(AcademyPaymentFailureNotifier::class)->recordFailure(
+          $payment,
+          'Paiement annulé par l\'utilisateur',
+          'card_cancel',
+          'cancelled'
+        );
+
+        $query = http_build_query([
+          'payment' => $status,
+          'reference' => $reference,
+        ]);
+
+        return redirect("{$frontendBase}/academy/{$slug}?{$query}");
+
       case 'decline':
-        $payment->update(['status' => 'cancelled']);
+        app(AcademyPaymentFailureNotifier::class)->recordFailure(
+          $payment,
+          'Paiement refusé par la banque ou l\'opérateur',
+          'card_decline'
+        );
 
         $query = http_build_query([
           'payment' => $status,
@@ -79,6 +98,14 @@ class AcademyPaymentReturnController extends Controller
         return redirect("{$frontendBase}/academy/{$slug}?{$query}");
 
       default:
+        if ($payment !== null) {
+          app(AcademyPaymentFailureNotifier::class)->recordFailure(
+            $payment,
+            'Retour paiement carte inconnu ou en erreur',
+            'card_error'
+          );
+        }
+
         return redirect($frontendBase.'/academy?payment=error');
     }
   }
