@@ -16,11 +16,17 @@ class CurrencyConverter
   {
     $rate = SiteSetting::instance()->usd_to_cdf_rate;
 
-    if ($rate === null || (float) $rate <= 0) {
-      return null;
+    if ($rate !== null && (float) $rate > 0) {
+      return (float) $rate;
     }
 
-    return (float) $rate;
+    $fallback = config('site.usd_to_cdf_rate');
+
+    if ($fallback !== null && (float) $fallback > 0) {
+      return (float) $fallback;
+    }
+
+    return null;
   }
 
   /**

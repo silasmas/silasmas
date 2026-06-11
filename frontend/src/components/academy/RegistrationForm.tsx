@@ -17,13 +17,17 @@ import {
   pollPaymentAuto,
 } from "@/lib/payment-polling";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
+import {
+  buildPaymentCurrencyOptions,
+  formatSelectedPaymentTotal,
+} from "@/lib/payment-currency";
 import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type {
   MobileMoneyOperator,
   PaymentChannel,
   PaymentCurrency,
-  PaymentCurrencyOption,
   RegistrationPayload,
   SessionPaymentInfo,
   TrainingSession,
@@ -141,79 +145,13 @@ function formatSessionPrice(session: TrainingSession): string | null {
 }
 
 /**
- * Options de devise disponibles à l'étape paiement (équivalent du tarif session).
- */
-function resolveCurrencyOptions(
-  payment: SessionPaymentInfo,
-  session: TrainingSession
-): PaymentCurrencyOption[] {
-  if (payment.currency_options && payment.currency_options.length > 0) {
-    return payment.currency_options;
-  }
-
-  const options: PaymentCurrencyOption[] = [];
-
-  if (session.price_usd != null) {
-    options.push({
-      currency: "USD",
-      amount: session.price_usd,
-      formatted: formatCurrencyAmount(session.price_usd, "USD"),
-    });
-  }
-
-  if (session.price_cdf != null) {
-    options.push({
-      currency: "CDF",
-      amount: session.price_cdf,
-      formatted: formatCurrencyAmount(session.price_cdf, "CDF"),
-    });
-  }
-
-  if (options.length === 0) {
-    const currency = (payment.currency || session.currency || "USD") as PaymentCurrency;
-
-    options.push({
-      currency,
-      amount: payment.amount,
-      formatted: formatCurrencyAmount(payment.amount, currency),
-    });
-  }
-
-  return options;
-}
-
-/**
- * Formate un montant selon la devise.
- */
-function formatCurrencyAmount(amount: number, currency: string): string {
-  if (currency === "CDF") {
-    return `${amount.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} CDF`;
-  }
-
-  return `${amount.toLocaleString("fr-FR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ${currency}`;
-}
-
-/**
- * Montant affiché pour la devise sélectionnée à l'étape paiement.
- */
-function formatSelectedPaymentTotal(option: PaymentCurrencyOption | undefined): string {
-  if (!option) {
-    return "—";
-  }
-
-  return option.formatted ?? formatCurrencyAmount(option.amount, option.currency);
-}
-
-/**
  * Formulaire d'inscription multi-étapes avec paiement si session payante.
  */
 export function RegistrationForm({
   session,
   variant = "default",
 }: RegistrationFormProps) {
+  const siteSettings = useSiteSettings();
   const isHero = variant === "hero";
   const inputClass = isHero ? inputClassHero : inputClassDefault;
   const cardClass = isHero
@@ -241,8 +179,15 @@ export function RegistrationForm({
   const showPaymentMethodChoice = availablePaymentChannels.length > 1;
   const showMobileOperatorChoice = availableMobileOperators.length > 1;
   const currencyOptions = useMemo(
-    () => (paymentInfo ? resolveCurrencyOptions(paymentInfo, session) : []),
-    [paymentInfo, session]
+    () =>
+      paymentInfo
+        ? buildPaymentCurrencyOptions(
+            session,
+            paymentInfo,
+            siteSettings.usd_to_cdf_rate
+          )
+        : buildPaymentCurrencyOptions(session, null, siteSettings.usd_to_cdf_rate),
+    [paymentInfo, session, siteSettings.usd_to_cdf_rate]
   );
   const showCurrencyChoice = currencyOptions.length > 1;
   const selectedCurrencyOption = currencyOptions.find(

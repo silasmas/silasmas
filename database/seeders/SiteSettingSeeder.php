@@ -25,6 +25,7 @@ class SiteSettingSeeder extends Seeder
         'phone_secondary' => '(+243) 993 107 499',
         'address' => '01, av. des Oliviers, Limete 7ème Rue — Kinshasa, RDC',
         'footer_description' => 'SDEV offre des solutions informatiques, des accompagnements et conseils en stratégie marketing digitale et assure la couverture médiatique des évènements de tout genre.',
+        'usd_to_cdf_rate' => config('site.usd_to_cdf_rate') ?? 2850,
       ]
     );
   }

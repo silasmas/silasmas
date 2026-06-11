@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Academy;
 
+use App\Support\AcademyPaymentPricing;
 use App\Support\CurrencyConverter;
 use App\Support\FrontendUrl;
 use Illuminate\Http\Request;
@@ -49,6 +50,10 @@ class TrainingSessionResource extends JsonResource
         ? CurrencyConverter::dualAmounts((float) $this->price, $this->registrationCurrency())['cdf']
         : null,
       'exchange_rate_usd_cdf' => CurrencyConverter::usdToCdfRate(),
+      'payment_currency_options' => $this->when(
+        $this->isPaid(),
+        fn () => AcademyPaymentPricing::currencyOptions($this->resource)
+      ),
       'payment_mobile_money_enabled' => $this->acceptsMobileMoneyPayment(),
       'payment_card_enabled' => $this->acceptsCardPayment(),
       'enabled_mobile_operators' => $this->enabledMobileOperators(),

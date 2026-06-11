@@ -63,6 +63,7 @@ export interface TrainingSession {
   price_usd?: number | null;
   price_cdf?: number | null;
   exchange_rate_usd_cdf?: number | null;
+  payment_currency_options?: PaymentCurrencyOption[];
   notify_by_email?: boolean;
   notify_by_sms?: boolean;
   notify_by_whatsapp?: boolean;

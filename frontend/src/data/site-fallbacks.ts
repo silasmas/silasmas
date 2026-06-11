@@ -71,4 +71,5 @@ export const FALLBACK_SITE_SETTINGS = {
   address: "01, av. des Oliviers, Limete 7ème Rue — Kinshasa, RDC",
   footer_description:
     "SDEV offre des solutions informatiques, des accompagnements et conseils en stratégie marketing digitale.",
+  usd_to_cdf_rate: 2850,
 };
