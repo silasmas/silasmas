@@ -8,8 +8,9 @@ use App\Services\AcademyPaymentFailureNotifier;
 use App\Services\AcademyRegistrationNotifier;
 use App\Services\FlexPayCheckService;
 use App\Services\FlexPayService;
-use App\Support\ParticipantToken;
+use App\Support\AcademyPaymentPricing;
 use App\Support\MobileMoneyValidation;
+use App\Support\ParticipantToken;
 use Illuminate\Http\Request;
 
 /**
@@ -33,6 +34,7 @@ class AcademyPaymentController extends BaseController
         'max:32',
         'in:'.implode(',', MobileMoneyValidation::supportedOperatorCodes()),
       ],
+      'payment_currency' => ['nullable', 'string', 'max:3'],
     ], [
       'phone.required_if' => 'Le numéro de téléphone est obligatoire pour Mobile Money.',
       'mobile_operator.required_if' => 'Choisissez votre opérateur Mobile Money.',
@@ -71,6 +73,19 @@ class AcademyPaymentController extends BaseController
     if (! in_array($validated['channel'], $enabledChannels, true)) {
       return $this->handleError('Ce moyen de paiement n\'est pas disponible pour cette session.', [], 422);
     }
+
+    $chargeCurrency = $validated['payment_currency'] ?? $payment->currency;
+
+    try {
+      $charge = AcademyPaymentPricing::resolveCharge($session, (string) $chargeCurrency);
+    } catch (\InvalidArgumentException $exception) {
+      return $this->handleError($exception->getMessage(), [], 422);
+    }
+
+    $payment->update([
+      'amount' => $charge['amount'],
+      'currency' => $charge['currency'],
+    ]);
 
     if ($validated['channel'] === 'mobile_money') {
       $operator = $validated['mobile_operator'] ?? 'mpesa';

@@ -22,6 +22,8 @@ import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type {
   MobileMoneyOperator,
   PaymentChannel,
+  PaymentCurrency,
+  PaymentCurrencyOption,
   RegistrationPayload,
   SessionPaymentInfo,
   TrainingSession,
@@ -139,19 +141,70 @@ function formatSessionPrice(session: TrainingSession): string | null {
 }
 
 /**
- * Montant affiché à l'étape paiement.
+ * Options de devise disponibles à l'étape paiement (équivalent du tarif session).
  */
-function formatPaymentTotal(
+function resolveCurrencyOptions(
   payment: SessionPaymentInfo,
   session: TrainingSession
-): string {
-  const dual = formatSessionPrice(session);
-
-  if (dual) {
-    return dual;
+): PaymentCurrencyOption[] {
+  if (payment.currency_options && payment.currency_options.length > 0) {
+    return payment.currency_options;
   }
 
-  return `${payment.amount} ${payment.currency}`;
+  const options: PaymentCurrencyOption[] = [];
+
+  if (session.price_usd != null) {
+    options.push({
+      currency: "USD",
+      amount: session.price_usd,
+      formatted: formatCurrencyAmount(session.price_usd, "USD"),
+    });
+  }
+
+  if (session.price_cdf != null) {
+    options.push({
+      currency: "CDF",
+      amount: session.price_cdf,
+      formatted: formatCurrencyAmount(session.price_cdf, "CDF"),
+    });
+  }
+
+  if (options.length === 0) {
+    const currency = (payment.currency || session.currency || "USD") as PaymentCurrency;
+
+    options.push({
+      currency,
+      amount: payment.amount,
+      formatted: formatCurrencyAmount(payment.amount, currency),
+    });
+  }
+
+  return options;
+}
+
+/**
+ * Formate un montant selon la devise.
+ */
+function formatCurrencyAmount(amount: number, currency: string): string {
+  if (currency === "CDF") {
+    return `${amount.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} CDF`;
+  }
+
+  return `${amount.toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ${currency}`;
+}
+
+/**
+ * Montant affiché pour la devise sélectionnée à l'étape paiement.
+ */
+function formatSelectedPaymentTotal(option: PaymentCurrencyOption | undefined): string {
+  if (!option) {
+    return "—";
+  }
+
+  return option.formatted ?? formatCurrencyAmount(option.amount, option.currency);
 }
 
 /**
@@ -187,6 +240,14 @@ export function RegistrationForm({
   );
   const showPaymentMethodChoice = availablePaymentChannels.length > 1;
   const showMobileOperatorChoice = availableMobileOperators.length > 1;
+  const currencyOptions = useMemo(
+    () => (paymentInfo ? resolveCurrencyOptions(paymentInfo, session) : []),
+    [paymentInfo, session]
+  );
+  const showCurrencyChoice = currencyOptions.length > 1;
+  const selectedCurrencyOption = currencyOptions.find(
+    (option) => option.currency === paymentCurrency
+  );
   const benefits = useRegistrationBenefits(session.slug, session);
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
@@ -197,6 +258,7 @@ export function RegistrationForm({
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<SessionPaymentInfo | null>(null);
+  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency | "">("");
   const [channel, setChannel] = useState<PaymentChannel | "">("");
   const [mobileOperator, setMobileOperator] = useState<MobileMoneyOperator | "">("");
   const [phone, setPhone] = useState("");
@@ -221,6 +283,21 @@ export function RegistrationForm({
       }
     }
   }, [step, availablePaymentChannels, channel]);
+
+  useEffect(() => {
+    if (step !== "payment" || currencyOptions.length === 0) {
+      return;
+    }
+
+    const defaultCurrency = currencyOptions[0].currency;
+
+    if (
+      paymentCurrency === "" ||
+      !currencyOptions.some((option) => option.currency === paymentCurrency)
+    ) {
+      setPaymentCurrency(defaultCurrency);
+    }
+  }, [step, currencyOptions, paymentCurrency]);
 
   useEffect(() => {
     if (step !== "payment" || channel !== "mobile_money") {
@@ -493,6 +570,11 @@ export function RegistrationForm({
       return;
     }
 
+    if (!paymentCurrency || !currencyOptions.some((option) => option.currency === paymentCurrency)) {
+      setError("Choisissez la devise de paiement.");
+      return;
+    }
+
     if (channel === "mobile_money") {
       if (availableMobileOperators.length === 0) {
         setError("Aucun opérateur Mobile Money n'est disponible pour cette session.");
@@ -522,6 +604,7 @@ export function RegistrationForm({
       const res = await processAcademyPayment({
         reference: paymentInfo.reference,
         channel,
+        payment_currency: paymentCurrency,
         phone: channel === "mobile_money" ? phone.trim() : undefined,
         mobile_operator:
           channel === "mobile_money" && mobileOperator
@@ -800,15 +883,58 @@ export function RegistrationForm({
               {resumeInfo}
             </p>
           )}
-          <p className="text-sm text-ink-soft">
-            Total :{" "}
-            <strong className="text-academy">
-              {formatPaymentTotal(paymentInfo, session)}
-            </strong>
-            <span className="ml-2 block text-xs text-muted sm:inline">
+          <div className="space-y-3">
+            {showCurrencyChoice ? (
+              <div>
+                <p className="mb-2 text-sm font-medium text-ink">
+                  Devise de paiement *
+                </p>
+                <p className="mb-3 text-xs text-muted">
+                  Même tarif d&apos;inscription — choisissez la devise disponible
+                  sur votre compte (le montant de la session ne change pas).
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {currencyOptions.map((option) => (
+                    <button
+                      key={option.currency}
+                      type="button"
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        paymentCurrency === option.currency
+                          ? "border-academy/50 bg-academy-soft"
+                          : "border-line hover:border-academy/30"
+                      }`}
+                      onClick={() => setPaymentCurrency(option.currency)}
+                    >
+                      <span className="font-semibold text-ink">
+                        {option.currency}
+                      </span>
+                      <span className="mt-1 block text-sm text-academy">
+                        {formatSelectedPaymentTotal(option)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-soft">
+                Total :{" "}
+                <strong className="text-academy">
+                  {formatSelectedPaymentTotal(selectedCurrencyOption ?? currencyOptions[0])}
+                </strong>
+              </p>
+            )}
+            <p className="text-xs text-muted">
               Réf. {paymentInfo.reference}
-            </span>
-          </p>
+              {showCurrencyChoice && selectedCurrencyOption && (
+                <span className="mt-1 block sm:mt-0 sm:ml-2 sm:inline">
+                  Montant à débiter :{" "}
+                  <strong className="text-ink-soft">
+                    {formatSelectedPaymentTotal(selectedCurrencyOption)}
+                  </strong>
+                </span>
+              )}
+            </p>
+          </div>
 
           {availablePaymentChannels.length === 0 ? (
             <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

@@ -11,6 +11,7 @@ use App\Models\SessionPayment;
 use App\Models\Student;
 use App\Models\TrainingSession;
 use App\Services\AcademyRegistrationNotifier;
+use App\Support\AcademyPaymentPricing;
 use App\Support\ParticipantToken;
 use Illuminate\Http\Request;
 
@@ -258,11 +259,19 @@ class AcademyController extends BaseController
    */
   protected function paymentPayload(SessionPayment $payment): array
   {
+    $payment->loadMissing('trainingSession');
+    $session = $payment->trainingSession;
+    $currencyOptions = $session !== null
+      ? AcademyPaymentPricing::currencyOptions($session)
+      : [];
+
     return [
       'reference' => $payment->reference,
       'amount' => (float) $payment->amount,
-      'currency' => $payment->currency,
+      'currency' => strtoupper((string) $payment->currency),
       'status' => $payment->status,
+      'currency_options' => $currencyOptions,
+      'equivalent_pricing' => count($currencyOptions) > 1,
     ];
   }
 

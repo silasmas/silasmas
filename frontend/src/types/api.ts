@@ -85,11 +85,21 @@ export type MobileMoneyOperator = "mpesa" | "airtel" | "orange" | "afrimoney";
 
 export type PaymentChannel = "mobile_money" | "card";
 
+export type PaymentCurrency = "USD" | "CDF" | "EUR";
+
+export interface PaymentCurrencyOption {
+  currency: PaymentCurrency;
+  amount: number;
+  formatted?: string;
+}
+
 export interface SessionPaymentInfo {
   reference: string;
   amount: number;
   currency: string;
   status: string;
+  currency_options?: PaymentCurrencyOption[];
+  equivalent_pricing?: boolean;
 }
 
 export type RegistrationResumeAction = "payment" | "participant_space";
@@ -116,6 +126,7 @@ export interface RegistrationResult {
 export interface ProcessPaymentPayload {
   reference: string;
   channel: PaymentChannel;
+  payment_currency?: PaymentCurrency;
   phone?: string;
   mobile_operator?: MobileMoneyOperator;
 }
