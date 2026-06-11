@@ -162,6 +162,22 @@ export function RegistrationForm({
     ? "font-display text-3xl tracking-tight md:text-4xl"
     : "font-display text-2xl tracking-tight";
   const isPaidSession = session.is_paid === true && !session.is_free;
+
+  const [step, setStep] = useState<WizardStep>("personal");
+  const [loading, setLoading] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentInfo, setPaymentInfo] = useState<SessionPaymentInfo | null>(null);
+  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency | "">("");
+  const [channel, setChannel] = useState<PaymentChannel | "">("");
+  const [mobileOperator, setMobileOperator] = useState<MobileMoneyOperator | "">("");
+  const [phone, setPhone] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showManualVerify, setShowManualVerify] = useState(false);
+  const [verifyAttempts, setVerifyAttempts] = useState(0);
+  const [participantToken, setParticipantToken] = useState<string | null>(null);
+  const [resumeInfo, setResumeInfo] = useState<string | null>(null);
+
   const availablePaymentChannels = useMemo(
     () => enabledPaymentChannels(session),
     [
@@ -198,21 +214,6 @@ export function RegistrationForm({
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
     : ["personal", "profile", "summary", "done"];
-
-  const [step, setStep] = useState<WizardStep>("personal");
-  const [loading, setLoading] = useState(false);
-  const [polling, setPolling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [paymentInfo, setPaymentInfo] = useState<SessionPaymentInfo | null>(null);
-  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency | "">("");
-  const [channel, setChannel] = useState<PaymentChannel | "">("");
-  const [mobileOperator, setMobileOperator] = useState<MobileMoneyOperator | "">("");
-  const [phone, setPhone] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showManualVerify, setShowManualVerify] = useState(false);
-  const [verifyAttempts, setVerifyAttempts] = useState(0);
-  const [participantToken, setParticipantToken] = useState<string | null>(null);
-  const [resumeInfo, setResumeInfo] = useState<string | null>(null);
 
   useEffect(() => {
     if (step !== "payment" || availablePaymentChannels.length !== 1) {
