@@ -34,17 +34,10 @@ return [
     'flexpay' => [
         'merchant' => env('FLEXPAY_MARCHAND'),
         'token' => env('FLEXPAY_API_TOKEN'),
-        'gateway_mobile' => env('FLEXPAY_GATEWAY_MOBILE', 'https://backend.flexpay.cd/api/rest/v1/mobile'),
-        'gateway_card' => env('FLEXPAY_GATEWAY_CARD', 'https://backend.flexpay.cd/api/rest/v1/card'),
+        'gateway_mobile' => env('FLEXPAY_GATEWAY_MOBILE', 'https://backend.flexpay.cd/api/rest/v1/paymentService'),
+        'gateway_card' => env('FLEXPAY_GATEWAY_CARD', 'https://cardpayment.flexpay.cd/v1.1/pay'),
         'gateway_check' => env('FLEXPAY_GATEWAY_CHECK', 'https://backend.flexpay.cd/api/rest/v1/check'),
         'frontend_url' => rtrim(env('FRONTEND_URL', 'https://silasmas.com'), '/'),
-        'mobile_types' => [
-            'mpesa' => env('FLEXPAY_TYPE_MPESA', '1'),
-            'airtel' => env('FLEXPAY_TYPE_AIRTEL', '2'),
-            'orange' => env('FLEXPAY_TYPE_ORANGE', '3'),
-            'afrimoney' => env('FLEXPAY_TYPE_AFRIMONEY', '4'),
-            'default' => '1',
-        ],
     ],
 
     'academy' => [

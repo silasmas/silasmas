@@ -26,7 +26,13 @@ class AcademyPaymentController extends BaseController
       'reference' => ['required', 'string', 'exists:session_payments,reference'],
       'channel' => ['required', 'in:mobile_money,card'],
       'phone' => ['required_if:channel,mobile_money', 'nullable', 'string', 'max:30'],
-      'mobile_operator' => ['required_if:channel,mobile_money', 'nullable', 'in:mpesa,airtel,orange,afrimoney'],
+      'mobile_operator' => [
+        'required_if:channel,mobile_money',
+        'nullable',
+        'string',
+        'max:32',
+        'in:'.implode(',', MobileMoneyValidation::supportedOperatorCodes()),
+      ],
     ], [
       'phone.required_if' => 'Le numéro de téléphone est obligatoire pour Mobile Money.',
       'mobile_operator.required_if' => 'Choisissez votre opérateur Mobile Money.',
@@ -94,7 +100,6 @@ class AcademyPaymentController extends BaseController
 
       $data = [
         'merchant' => config('services.flexpay.merchant'),
-        'type' => flexpayMobileTypeForOperator($operator),
         'phone' => $normalizedPhone,
         'reference' => $payment->reference,
         'amount' => (float) $payment->amount,

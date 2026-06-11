@@ -4,6 +4,9 @@ namespace App\Support;
 
 /**
  * Validation des numéros Mobile Money RDC (préfixe 243 + opérateur).
+ *
+ * La sélection d'opérateur sert uniquement à valider le MSISDN côté application.
+ * FlexPay route le paiement via le numéro phone (type API toujours "1").
  */
 class MobileMoneyValidation
 {
@@ -18,6 +21,16 @@ class MobileMoneyValidation
     'orange' => ['80', '84', '85', '86', '87', '88', '89'],
     'afrimoney' => ['90', '91', '99'],
   ];
+
+  /**
+   * Codes opérateurs supportés pour la validation Laravel.
+   *
+   * @return list<string>
+   */
+  public static function supportedOperatorCodes(): array
+  {
+    return MobileMoneyOperators::supportedCodes();
+  }
 
   /**
    * Normalise un numéro (chiffres uniquement, préfixe 243).
@@ -45,7 +58,7 @@ class MobileMoneyValidation
       return null;
     }
 
-    if (strlen($digits) < 12 || strlen($digits) > 12) {
+    if (strlen($digits) !== 12) {
       return null;
     }
 
@@ -61,6 +74,7 @@ class MobileMoneyValidation
    */
   public static function validateForOperator(string $phone, string $operator): array
   {
+    $operator = MobileMoneyOperators::normalizeCode($operator) ?? $operator;
     $normalized = self::normalizePhone($phone);
 
     if ($normalized === null) {
@@ -70,21 +84,29 @@ class MobileMoneyValidation
       ];
     }
 
+    $regex = self::msisdnRegexForOperator($operator);
+
+    if ($regex !== null) {
+      if (! preg_match('~'.$regex.'~', $normalized)) {
+        return [
+          'valid' => false,
+          'message' => 'Ce numéro ne correspond pas à '.self::operatorLabel($operator).'. Corrigez le numéro ou changez d\'opérateur.',
+        ];
+      }
+
+      return [
+        'valid' => true,
+        'normalized' => $normalized,
+      ];
+    }
+
     $prefix = substr($normalized, 3, 2);
     $allowed = self::$operatorPrefixes[$operator] ?? [];
 
-    if (! in_array($prefix, $allowed, true)) {
-      $label = match ($operator) {
-        'mpesa' => 'M-Pesa (Vodacom)',
-        'airtel' => 'Airtel Money',
-        'orange' => 'Orange Money',
-        'afrimoney' => 'Afrimoney (Africell)',
-        default => $operator,
-      };
-
+    if ($allowed !== [] && ! in_array($prefix, $allowed, true)) {
       return [
         'valid' => false,
-        'message' => "Ce numéro ne correspond pas à {$label}. Corrigez le numéro ou changez d'opérateur.",
+        'message' => 'Ce numéro ne correspond pas à '.self::operatorLabel($operator).'. Corrigez le numéro ou changez d\'opérateur.',
       ];
     }
 
@@ -92,5 +114,33 @@ class MobileMoneyValidation
       'valid' => true,
       'normalized' => $normalized,
     ];
+  }
+
+  /**
+   * Regex MSISDN configurée pour un opérateur.
+   *
+   * @param string $operator Code opérateur
+   * @return string|null Pattern sans délimiteurs
+   */
+  protected static function msisdnRegexForOperator(string $operator): ?string
+  {
+    foreach (MobileMoneyOperators::configuredProviders() as $provider) {
+      if ($provider['code'] === $operator && ! empty($provider['msisdn_regex'])) {
+        return (string) $provider['msisdn_regex'];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Libellé lisible d'un opérateur.
+   *
+   * @param string $operator Code opérateur
+   * @return string Libellé
+   */
+  protected static function operatorLabel(string $operator): string
+  {
+    return MobileMoneyOperators::labels()[$operator] ?? $operator;
   }
 }

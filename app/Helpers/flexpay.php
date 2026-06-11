@@ -32,60 +32,32 @@ if (! function_exists('flexpayMobileGatewayUrl')) {
   }
 }
 
-if (! function_exists('flexpayUsesPaymentServiceEndpoint')) {
+if (! function_exists('flexpayMobileMoneyApiType')) {
   /**
-   * Indique si l'URL configurée pointe vers paymentService (format JSON différent).
+   * Type API FlexPay pour Mobile Money (doc v1.4 — toujours "1").
    *
-   * @return bool true si endpoint paymentService
-   */
-  function flexpayUsesPaymentServiceEndpoint(): bool
-  {
-    return str_contains(flexpayMobileGatewayUrl(), 'paymentService');
-  }
-}
-
-if (! function_exists('flexpayMobileTypeForOperator')) {
-  /**
-   * Code type FlexPay selon l'opérateur (endpoint /mobile uniquement).
+   * L'opérateur (M-Pesa, Airtel…) est déterminé par le numéro phone, pas par type.
    *
-   * @param string|null $operator mpesa|airtel|orange|afrimoney
-   * @return string Code envoyé à l'API FlexPay
+   * @return string Code type envoyé à FlexPay
    */
-  function flexpayMobileTypeForOperator(?string $operator): string
+  function flexpayMobileMoneyApiType(): string
   {
-    $map = config('services.flexpay.mobile_types', []);
-
-    return $map[$operator] ?? $map['default'] ?? '1';
+    return (string) config('flexpay.flexpay_mobile_money_api_type', '1');
   }
 }
 
 if (! function_exists('flexpayBuildMobilePayload')) {
   /**
-   * Construit le corps JSON selon l'endpoint FlexPay configuré.
+   * Construit le corps JSON FlexPay v1.4 pour Mobile Money.
    *
-   * paymentService : merchant_code, transaction_type=1, customer_phonenumber…
-   * /mobile          : merchant, type (opérateur), phone…
-   *
-   * @param array<string, mixed> $data Données normalisées internes
+   * @param array<string, mixed> $data merchant, phone, reference, amount, currency, callbackUrl
    * @return array<string, mixed> Payload à envoyer à FlexPay
    */
   function flexpayBuildMobilePayload(array $data): array
   {
-    if (flexpayUsesPaymentServiceEndpoint()) {
-      return [
-        'merchant_code' => $data['merchant'],
-        'transaction_type' => '1',
-        'your_reference' => $data['reference'],
-        'customer_phonenumber' => $data['phone'],
-        'amount' => $data['amount'],
-        'currency' => $data['currency'],
-        'callbackUrl' => $data['callbackUrl'],
-      ];
-    }
-
     return [
       'merchant' => $data['merchant'],
-      'type' => $data['type'],
+      'type' => flexpayMobileMoneyApiType(),
       'phone' => $data['phone'],
       'reference' => $data['reference'],
       'amount' => $data['amount'],
@@ -124,9 +96,9 @@ if (! function_exists('flexpayExtractMobileErrorMessage')) {
 
 if (! function_exists('initRequeteFlexPayMobile')) {
   /**
-   * Déclenche un paiement Mobile Money via FlexPay.
+   * Déclenche un paiement Mobile Money via FlexPay paymentService.
    *
-   * @param array<string, mixed> $data merchant, type, phone, reference, amount, currency, callbackUrl
+   * @param array<string, mixed> $data merchant, phone, reference, amount, currency, callbackUrl
    * @param SessionPayment $payment Enregistrement à mettre à jour
    * @return array<string, mixed>
    */
@@ -165,7 +137,7 @@ if (! function_exists('initRequeteFlexPayMobile')) {
       'server_response' => [
         'source' => 'flexpay_mobile',
         'endpoint' => $gateway,
-        'payload_format' => flexpayUsesPaymentServiceEndpoint() ? 'paymentService' : 'mobile',
+        'payload_format' => 'paymentService_v1.4',
         'http_status' => $response->status(),
         'request' => $payload,
         'body' => $responseBody ?? $response->body(),
