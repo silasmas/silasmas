@@ -3,6 +3,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { SiteSettings } from "@/types/api";
 import { FALLBACK_SITE_SETTINGS } from "@/data/site-fallbacks";
+import { siteFaviconUrl as resolveSiteFaviconUrl } from "@/lib/site-favicon";
 
 const SiteSettingsContext = createContext<SiteSettings>(FALLBACK_SITE_SETTINGS);
 
@@ -38,8 +39,8 @@ export function siteLogoUrl(settings: SiteSettings): string {
 }
 
 /**
- * URL du favicon site avec repli local.
+ * URL du favicon site avec repli vers le jeu par défaut.
  */
 export function siteFaviconUrl(settings: SiteSettings): string {
-  return settings.favicon_url ?? "/images/logo.png";
+  return resolveSiteFaviconUrl(settings.favicon_url);
 }

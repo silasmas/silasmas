@@ -7,10 +7,7 @@
         <meta content="sdev, silasdev, silasmas, développement, web, mobile, community, manager" name="keywords">
 
         <!-- Favicon -->
-        <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="{{ asset('assets/img/favicon/apple-touch-icon.png') }}">
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/img/favicon/favicon-32x32.png') }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/img/favicon/favicon-16x16.png') }}">
-        <link rel="manifest" href="{{ asset('assets/img/favicon/site.webmanifest') }}">
+        @include('parties.favicon')
 
         <!-- Vendor CSS Files -->
         <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendor/jquery/jquery-ui/jquery-ui.min.css') }}">

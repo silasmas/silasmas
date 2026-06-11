@@ -15,6 +15,7 @@ import {
   resolvePrimarySessionSlug,
 } from "@/lib/launch";
 import { pickPrimarySession } from "@/lib/sessions";
+import { resolveSiteFaviconIcons } from "@/lib/site-favicon";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -65,7 +66,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s — ${settings.site_title}`,
     },
     description: settings.footer_description ?? site.description,
-    icons: settings.favicon_url ? { icon: settings.favicon_url } : { icon: "/images/logo.png" },
+    icons: resolveSiteFaviconIcons(settings.favicon_url),
     openGraph: {
       title: `${settings.site_title} — Studio numérique & SDev Academy`,
       description: settings.footer_description ?? site.description,

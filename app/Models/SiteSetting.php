@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\MediaUrl;
+use App\Support\SiteFavicon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -51,13 +52,13 @@ class SiteSetting extends Model
   }
 
   /**
-   * URL publique du favicon.
+   * URL publique du favicon (configuré si valide, sinon favicon par défaut).
    *
-   * @return string|null URL absolue ou null
+   * @return string URL absolue
    */
-  public function faviconUrl(): ?string
+  public function faviconUrl(): string
   {
-    return MediaUrl::publicUrl($this->favicon);
+    return SiteFavicon::resolvedPublicUrl($this->favicon);
   }
 
   /**
@@ -71,7 +72,7 @@ class SiteSetting extends Model
       'site_title' => $this->site_title,
       'site_tagline' => $this->site_tagline,
       'logo_url' => $this->logoUrl(),
-      'favicon_url' => $this->faviconUrl(),
+      'favicon_url' => SiteFavicon::configuredPublicUrl($this->favicon),
       'email' => $this->email,
       'phone_primary' => $this->phone_primary,
       'phone_secondary' => $this->phone_secondary,
