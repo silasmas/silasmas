@@ -22,6 +22,7 @@ import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
 import {
   buildPaymentCurrencyOptions,
   formatSelectedPaymentTotal,
+  shouldShowCurrencyChoice,
 } from "@/lib/payment-currency";
 import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type {
@@ -189,7 +190,7 @@ export function RegistrationForm({
         : buildPaymentCurrencyOptions(session, null, siteSettings.usd_to_cdf_rate),
     [paymentInfo, session, siteSettings.usd_to_cdf_rate]
   );
-  const showCurrencyChoice = currencyOptions.length > 1;
+  const showCurrencyChoice = shouldShowCurrencyChoice(session, currencyOptions);
   const selectedCurrencyOption = currencyOptions.find(
     (option) => option.currency === paymentCurrency
   );
@@ -515,7 +516,12 @@ export function RegistrationForm({
       return;
     }
 
-    if (!paymentCurrency || !currencyOptions.some((option) => option.currency === paymentCurrency)) {
+    if (
+      showCurrencyChoice &&
+      currencyOptions.length > 1 &&
+      (!paymentCurrency ||
+        !currencyOptions.some((option) => option.currency === paymentCurrency))
+    ) {
       setError("Choisissez la devise de paiement.");
       return;
     }
@@ -549,7 +555,9 @@ export function RegistrationForm({
       const res = await processAcademyPayment({
         reference: paymentInfo.reference,
         channel,
-        payment_currency: paymentCurrency,
+        payment_currency:
+          paymentCurrency ||
+          (currencyOptions.length === 1 ? currencyOptions[0].currency : undefined),
         phone: channel === "mobile_money" ? phone.trim() : undefined,
         mobile_operator:
           channel === "mobile_money" && mobileOperator
@@ -829,7 +837,7 @@ export function RegistrationForm({
             </p>
           )}
           <div className="space-y-3">
-            {showCurrencyChoice ? (
+            {showCurrencyChoice && currencyOptions.length > 1 ? (
               <div>
                 <p className="mb-2 text-sm font-medium text-ink">
                   Devise de paiement *
@@ -862,9 +870,11 @@ export function RegistrationForm({
               </div>
             ) : (
               <p className="text-sm text-ink-soft">
-                Total :{" "}
+                Montant à payer :{" "}
                 <strong className="text-academy">
-                  {formatSelectedPaymentTotal(selectedCurrencyOption ?? currencyOptions[0])}
+                  {formatSelectedPaymentTotal(
+                    selectedCurrencyOption ?? currencyOptions[0]
+                  )}
                 </strong>
               </p>
             )}
