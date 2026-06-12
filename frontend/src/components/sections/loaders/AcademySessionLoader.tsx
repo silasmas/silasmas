@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { AcademySessionRegistration } from "@/components/academy/AcademySessionRegistration";
+import { PreRegistrationView } from "@/components/academy/PreRegistrationView";
 import { ScrollToFormFab } from "@/components/academy/ScrollToFormFab";
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { Container } from "@/components/site/Container";
@@ -29,6 +30,10 @@ export async function AcademySessionLoader({ slug }: AcademySessionLoaderProps) 
   }
 
   const launchMode = isAcademyLaunchMode();
+
+  if (session.shows_pre_registration_page) {
+    return <PreRegistrationView session={session} />;
+  }
 
   return (
     <section className="py-10 md:py-16 lg:py-20">

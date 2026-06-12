@@ -41,7 +41,7 @@ export function getRegistrationStatusStyle(status: string): string {
       ? "success"
       : status === "pending" || status === "pending_payment"
         ? "warning"
-        : status === "waitlist"
+        : status === "waitlist" || status === "pre_registered"
           ? "info"
           : status === "cancelled"
             ? "danger"

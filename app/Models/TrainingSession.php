@@ -23,6 +23,8 @@ class TrainingSession extends Model
     'start_date' => 'date',
     'end_date' => 'date',
     'is_featured' => 'boolean',
+    'pre_registration_enabled' => 'boolean',
+    'registration_opens_at' => 'datetime',
     'is_free' => 'boolean',
     'price' => 'decimal:2',
     'max_participants' => 'integer',
@@ -173,10 +175,76 @@ class TrainingSession extends Model
   }
 
   /**
+   * Indique si la date d'ouverture des inscriptions est atteinte (ou non configurée).
+   */
+  public function registrationOpeningReached(): bool
+  {
+    if ($this->registration_opens_at === null) {
+      return true;
+    }
+
+    return $this->registration_opens_at->isPast();
+  }
+
+  /**
+   * Indique si la page de pré-inscription doit être affichée sur le site.
+   */
+  public function showsPreRegistrationPage(): bool
+  {
+    if (! ($this->pre_registration_enabled ?? false)) {
+      return false;
+    }
+
+    if ($this->status === 'completed') {
+      return false;
+    }
+
+    if ($this->status === 'open' && $this->registrationOpeningReached()) {
+      return false;
+    }
+
+    return $this->registration_opens_at !== null;
+  }
+
+  /**
+   * Indique si la session accepte des pré-inscriptions (intérêt avant ouverture).
+   */
+  public function acceptsPreRegistrations(): bool
+  {
+    return $this->showsPreRegistrationPage();
+  }
+
+  /**
+   * URL publique de l'affiche dédiée à la pré-inscription (repli sur l'affiche session).
+   *
+   * @return string|null URL absolue ou null
+   */
+  public function preRegistrationCoverImageUrl(): ?string
+  {
+    $preCover = MediaUrl::publicUrl(
+      $this->getRawOriginal('pre_registration_cover_image') ?? $this->pre_registration_cover_image
+    );
+
+    if ($preCover !== null) {
+      return $preCover;
+    }
+
+    return $this->coverImageUrl();
+  }
+
+  /**
    * Indique si la session accepte encore de nouvelles inscriptions.
    */
   public function acceptsRegistrations(): bool
   {
+    if (
+      ($this->pre_registration_enabled ?? false)
+      && $this->registration_opens_at !== null
+      && ! $this->registrationOpeningReached()
+    ) {
+      return false;
+    }
+
     if ($this->status !== 'open') {
       return false;
     }
@@ -196,7 +264,32 @@ class TrainingSession extends Model
    */
   public function scopeVisibleOnWeb(Builder $query): Builder
   {
-    return $query->whereIn('status', ['open', 'closed', 'completed']);
+    return $query->where(function (Builder $builder) {
+      $builder->whereIn('status', ['open', 'closed', 'completed'])
+        ->orWhere(function (Builder $pre) {
+          $pre->where('pre_registration_enabled', true)
+            ->where('status', '!=', 'completed')
+            ->whereNotNull('registration_opens_at');
+        });
+    });
+  }
+
+  /**
+   * Sessions disponibles sur le site (inscriptions ou pré-inscription active).
+   *
+   * @param Builder $query Requête Eloquent
+   * @return Builder
+   */
+  public function scopeAvailableOnSite(Builder $query): Builder
+  {
+    return $query->visibleOnWeb()->where(function (Builder $builder) {
+      $builder->where('status', 'open')
+        ->orWhere(function (Builder $pre) {
+          $pre->where('pre_registration_enabled', true)
+            ->whereNotNull('registration_opens_at')
+            ->where('status', '!=', 'completed');
+        });
+    });
   }
 
   /**

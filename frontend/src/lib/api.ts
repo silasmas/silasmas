@@ -3,6 +3,8 @@ import type {
   ApiResponse,
   CheckPaymentStatusResponse,
   ContactPayload,
+  PreRegistrationPayload,
+  PreRegistrationResult,
   ProcessPaymentPayload,
   ProcessPaymentResponse,
   Project,
@@ -66,7 +68,12 @@ export function resolveStorageUrl(path?: string | null): string | null {
 export function sessionCoverUrl(session: {
   cover_image?: string | null;
   cover_image_url?: string | null;
-}): string | null {
+  pre_registration_cover_image_url?: string | null;
+}, preferPreRegistration = false): string | null {
+  if (preferPreRegistration && session.pre_registration_cover_image_url) {
+    return resolveStorageUrl(session.pre_registration_cover_image_url);
+  }
+
   return resolveStorageUrl(session.cover_image_url ?? session.cover_image);
 }
 
@@ -197,6 +204,61 @@ export async function submitRegistration(
       success: false,
       message: `Réponse serveur invalide (HTTP ${response.status}).`,
       data: null as unknown as RegistrationResult,
+    };
+  }
+
+  if (!response.ok && json.success !== false) {
+    json.success = false;
+    json.message = json.message || `Erreur serveur (HTTP ${response.status}).`;
+  }
+
+  if (!json.success && json.errors) {
+    const firstError = Object.values(json.errors).flat()[0];
+    if (firstError) {
+      json.message = firstError;
+    }
+  }
+
+  return json;
+}
+
+/**
+ * Envoie une pré-inscription Academy (client-side).
+ */
+export async function submitPreRegistration(
+  payload: PreRegistrationPayload
+): Promise<ApiResponse<PreRegistrationResult>> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE}/academy/pre-register`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return {
+      success: false,
+      message:
+        "Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez plus tard.",
+      data: null as unknown as PreRegistrationResult,
+    };
+  }
+
+  let json: ApiResponse<PreRegistrationResult> & {
+    errors?: Record<string, string[]>;
+  };
+
+  try {
+    json = await response.json();
+  } catch {
+    return {
+      success: false,
+      message: `Réponse serveur invalide (HTTP ${response.status}).`,
+      data: null as unknown as PreRegistrationResult,
     };
   }
 

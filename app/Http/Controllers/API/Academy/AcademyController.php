@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Academy;
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Requests\Academy\StorePreRegistrationRequest;
 use App\Http\Requests\Academy\StoreRegistrationRequest;
 use App\Http\Resources\Academy\RegistrationResource;
 use App\Http\Resources\Academy\TrainingSessionResource;
@@ -35,7 +36,7 @@ class AcademyController extends BaseController
     }
 
     if ($request->boolean('open_only')) {
-      $query->openForRegistration();
+      $query->availableOnSite();
     }
 
     $sessions = $query->get();
@@ -57,13 +58,84 @@ class AcademyController extends BaseController
       return $this->handleError('Session de formation introuvable', [], 404);
     }
 
-    if ($session->status === 'draft') {
+    if ($session->status === 'draft' && ! $session->showsPreRegistrationPage()) {
       return $this->handleError('Session de formation introuvable', [], 404);
     }
 
     return $this->handleResponse(
       new TrainingSessionResource($session),
       'Session de formation trouvée'
+    );
+  }
+
+  /**
+   * Enregistre une pré-inscription (intérêt avant ouverture des inscriptions).
+   */
+  public function preRegister(StorePreRegistrationRequest $request)
+  {
+    $session = TrainingSession::where('slug', $request->training_session_slug)->firstOrFail();
+
+    if (! $session->acceptsPreRegistrations()) {
+      return $this->handleError(
+        'Les pré-inscriptions ne sont pas ouvertes pour cette session.',
+        [],
+        422
+      );
+    }
+
+    $student = Student::updateOrCreate(
+      ['email' => $request->email],
+      [
+        'firstname' => $request->firstname,
+        'lastname' => $request->lastname,
+        'phone' => $request->phone,
+        'marketing_opt_in' => $request->boolean('marketing_opt_in', true),
+      ]
+    );
+
+    $existingRegistration = Registration::query()
+      ->where('training_session_id', $session->id)
+      ->where('student_id', $student->id)
+      ->first();
+
+    if ($existingRegistration !== null && $existingRegistration->status !== 'cancelled') {
+      if ($existingRegistration->status === 'pre_registered') {
+        return $this->handleResponse(
+          ['already_registered' => true],
+          'Vous êtes déjà pré-inscrit(e). Nous vous préviendrons dès l\'ouverture des inscriptions.',
+          200
+        );
+      }
+
+      return $this->handleError(
+        'Vous avez déjà une inscription pour cette session.',
+        [],
+        422
+      );
+    }
+
+    if ($existingRegistration !== null && $existingRegistration->status === 'cancelled') {
+      $existingRegistration->update([
+        'status' => 'pre_registered',
+        'source' => 'pre_registration',
+        'registered_at' => now(),
+        'motivation' => null,
+      ]);
+    } else {
+      Registration::create([
+        'student_id' => $student->id,
+        'training_session_id' => $session->id,
+        'status' => 'pre_registered',
+        'source' => 'pre_registration',
+        'registered_at' => now(),
+        'notify_email' => (bool) ($session->notify_by_email ?? true),
+      ]);
+    }
+
+    return $this->handleResponse(
+      ['already_registered' => false],
+      'Pré-inscription enregistrée. Nous vous contacterons à l\'ouverture des inscriptions.',
+      201
     );
   }
 
@@ -94,6 +166,10 @@ class AcademyController extends BaseController
       ->first();
 
     if ($existingRegistration !== null && $existingRegistration->status !== 'cancelled') {
+      if ($existingRegistration->status === 'pre_registered' && $session->acceptsRegistrations()) {
+        return $this->upgradePreRegistration($request, $session, $student, $existingRegistration);
+      }
+
       return $this->resumeExistingRegistration($request, $session, $existingRegistration);
     }
 
@@ -106,6 +182,80 @@ class AcademyController extends BaseController
     }
 
     return $this->createNewRegistration($request, $session, $student, $existingRegistration);
+  }
+
+  /**
+   * Passe une pré-inscription au parcours d'inscription complet.
+   */
+  protected function upgradePreRegistration(
+    StoreRegistrationRequest $request,
+    TrainingSession $session,
+    Student $student,
+    Registration $registration
+  ) {
+    $student->update([
+      'firstname' => $request->firstname,
+      'lastname' => $request->lastname,
+      'phone' => $request->phone,
+      'city' => $request->city,
+      'country' => $request->country ?? 'RDC',
+      'education_level' => $request->education_level,
+      'occupation' => $request->occupation,
+      'marketing_opt_in' => $request->boolean('marketing_opt_in', true),
+    ]);
+
+    $requiresPayment = $session->isPaid();
+    $initialStatus = $requiresPayment ? 'pending_payment' : 'confirmed';
+    $notifyFlags = $this->resolveNotificationFlags($request, $session);
+    $accessToken = $registration->access_token ?? ParticipantToken::generate();
+
+    $registration->update([
+      'status' => $initialStatus,
+      'motivation' => $request->motivation,
+      'source' => 'website',
+      'registered_at' => now(),
+      'access_token' => $accessToken,
+      'notify_email' => $notifyFlags['notify_email'],
+      'notify_sms' => $notifyFlags['notify_sms'],
+      'notify_whatsapp' => $notifyFlags['notify_whatsapp'],
+      'confirmation_notified_at' => null,
+    ]);
+
+    $registration->load(['student', 'trainingSession']);
+
+    if (! $requiresPayment && $initialStatus === 'confirmed') {
+      app(AcademyRegistrationNotifier::class)->sendConfirmation($registration, false);
+    }
+
+    $paymentPayload = null;
+
+    if ($requiresPayment) {
+      $payment = SessionPayment::create([
+        'training_session_id' => $session->id,
+        'registration_id' => $registration->id,
+        'student_id' => $student->id,
+        'amount' => $session->registrationAmount(),
+        'currency' => $session->registrationCurrency(),
+        'status' => 'pending',
+        'reference' => generateAcademyPaymentReference(),
+      ]);
+      $paymentPayload = $this->paymentPayload($payment);
+    }
+
+    $message = $requiresPayment
+      ? 'Inscription enregistrée. Procédez au paiement pour confirmer votre place.'
+      : 'Inscription confirmée avec succès. Nous vous contacterons prochainement.';
+
+    return $this->registrationResponse(
+      $registration,
+      $requiresPayment,
+      $paymentPayload,
+      $message,
+      201,
+      $requiresPayment ? 'payment' : 'participant_space',
+      false,
+      ! $requiresPayment
+    );
   }
 
   /**

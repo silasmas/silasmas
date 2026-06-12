@@ -7,6 +7,8 @@ interface SessionPosterProps {
   priority?: boolean;
   /** hero : page session · modal : modale promo sans débordement. */
   variant?: "default" | "hero" | "modal";
+  /** Utilise l'affiche dédiée à la pré-inscription si disponible. */
+  preferPreRegistrationCover?: boolean;
 }
 
 /**
@@ -17,8 +19,9 @@ export function SessionPoster({
   className = "",
   priority = false,
   variant = "default",
+  preferPreRegistrationCover = false,
 }: SessionPosterProps) {
-  const imageUrl = sessionCoverUrl(session);
+  const imageUrl = sessionCoverUrl(session, preferPreRegistrationCover);
   const aspectClass =
     variant === "modal"
       ? "session-poster-modal aspect-[2/3] h-full max-h-[min(70vh,500px)] w-auto"

@@ -191,6 +191,37 @@ class TrainingSessionResource extends Resource
               ->default(false),
           ])
           ->columns(3),
+        Forms\Components\Section::make('Pré-inscription')
+          ->description('Page d\'annonce avec compte à rebours avant l\'ouverture des inscriptions.')
+          ->schema([
+            Forms\Components\Toggle::make('pre_registration_enabled')
+              ->label('Activer la page de pré-inscription')
+              ->live(),
+            Forms\Components\DateTimePicker::make('registration_opens_at')
+              ->label('Ouverture des inscriptions')
+              ->seconds(false)
+              ->native(false)
+              ->helperText('Date/heure cible du compte à rebours et bascule vers le formulaire complet.')
+              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled'))
+              ->required(fn (Get $get): bool => (bool) $get('pre_registration_enabled')),
+            Forms\Components\Textarea::make('pre_registration_message')
+              ->label('Message d\'annonce')
+              ->rows(4)
+              ->helperText('Texte affiché au-dessus du compte à rebours (ex. « Inscriptions bientôt ouvertes »).')
+              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled'))
+              ->columnSpanFull(),
+            Forms\Components\FileUpload::make('pre_registration_cover_image')
+              ->label('Affiche pré-inscription')
+              ->image()
+              ->disk('public')
+              ->directory('images/academy/sessions')
+              ->visibility('public')
+              ->maxFiles(1)
+              ->imageEditor()
+              ->helperText('Optionnel — sinon l\'affiche principale de la session est utilisée.')
+              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled')),
+          ])
+          ->columns(2),
         Forms\Components\Section::make('Page d\'inscription')
           ->description('Avantages affichés sous le formulaire d\'inscription et dans la modale d\'accueil.')
           ->schema([
@@ -283,6 +314,15 @@ class TrainingSessionResource extends Resource
         Tables\Columns\IconColumn::make('is_featured')
           ->label('Vedette')
           ->boolean(),
+        Tables\Columns\IconColumn::make('pre_registration_enabled')
+          ->label('Pré-insc.')
+          ->boolean()
+          ->toggleable(),
+        Tables\Columns\TextColumn::make('registration_opens_at')
+          ->label('Ouverture inscr.')
+          ->dateTime('d/m/Y H:i')
+          ->sortable()
+          ->toggleable(isToggledHiddenByDefault: true),
         Tables\Columns\TextColumn::make('price')
           ->label('Tarif')
           ->formatStateUsing(function ($state, TrainingSession $record): string {

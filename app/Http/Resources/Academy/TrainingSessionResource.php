@@ -82,6 +82,16 @@ class TrainingSessionResource extends JsonResource
         $this->participant_benefits
       ),
       'registration_benefits' => $this->registrationBenefitsList(),
+      'pre_registration_enabled' => (bool) ($this->pre_registration_enabled ?? false),
+      'shows_pre_registration_page' => $this->showsPreRegistrationPage(),
+      'registration_opens_at' => $this->registration_opens_at?->toIso8601String(),
+      'registration_opens_at_label' => $this->registration_opens_at?->translatedFormat('d F Y à H:i'),
+      'pre_registration_message' => $this->pre_registration_message,
+      'pre_registration_cover_image_url' => $this->preRegistrationCoverImageUrl(),
+      'pre_registrations_count' => $this->when(
+        $request->routeIs('academy.sessions.show'),
+        fn () => $this->registrations()->where('status', 'pre_registered')->count()
+      ),
       'session_resources' => $this->when(
         $request->routeIs('academy.sessions.show'),
         $this->session_resources ?? []

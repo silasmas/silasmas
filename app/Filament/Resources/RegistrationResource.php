@@ -54,6 +54,7 @@ class RegistrationResource extends Resource
             'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
+            'pre_registered' => 'Pré-inscrit',
             'cancelled' => 'Annulée',
           ])
           ->required(),
@@ -99,6 +100,7 @@ class RegistrationResource extends Resource
             'pending' => 'warning',
             'pending_payment' => 'warning',
             'waitlist' => 'info',
+            'pre_registered' => 'info',
             'cancelled' => 'danger',
             default => 'gray',
           })
@@ -107,6 +109,7 @@ class RegistrationResource extends Resource
             'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
+            'pre_registered' => 'Pré-inscrit',
             'cancelled' => 'Annulée',
             default => $state,
           }),
@@ -130,6 +133,7 @@ class RegistrationResource extends Resource
             'pending_payment' => 'En attente de paiement',
             'confirmed' => 'Confirmée',
             'waitlist' => 'Liste d\'attente',
+            'pre_registered' => 'Pré-inscrit',
             'cancelled' => 'Annulée',
           ]),
       ])

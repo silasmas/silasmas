@@ -73,6 +73,13 @@ export interface TrainingSession {
   confidentiality_notice?: string | null;
   participant_benefits?: string | null;
   registration_benefits?: string[];
+  pre_registration_enabled?: boolean;
+  shows_pre_registration_page?: boolean;
+  registration_opens_at?: string | null;
+  registration_opens_at_label?: string | null;
+  pre_registration_message?: string | null;
+  pre_registration_cover_image_url?: string | null;
+  pre_registrations_count?: number;
   session_resources?: SessionResourceItem[];
 }
 
@@ -283,6 +290,19 @@ export interface RegistrationPayload {
   notify_email?: boolean;
   notify_sms?: boolean;
   notify_whatsapp?: boolean;
+}
+
+export interface PreRegistrationPayload {
+  training_session_slug: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone?: string;
+  marketing_opt_in?: boolean;
+}
+
+export interface PreRegistrationResult {
+  already_registered: boolean;
 }
 
 export interface ParticipantSpace {
