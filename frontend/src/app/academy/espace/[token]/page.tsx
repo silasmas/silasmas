@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ParticipantSpaceView } from "@/components/academy/ParticipantSpaceView";
 import { Container } from "@/components/site/Container";
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Espace participant",
+  description: "Espace privé participant SDev Academy.",
+  path: "/academy/espace",
+  noIndex: true,
+});
 
 interface ParticipantPageProps {
   params: Promise<{ token: string }>;

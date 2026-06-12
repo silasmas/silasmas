@@ -10,11 +10,14 @@ import { mapServicesForStudio } from "@/lib/site-content";
 import { mergeSiteContent } from "@/lib/site-content";
 import { stock } from "@/lib/stock";
 
-export const metadata: Metadata = {
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
   title: "Studio — Services numériques",
   description:
     "Le studio Silas Développe : conception produit, développement web et mobile, design, marketing et IA appliquée.",
-};
+  path: "/studio",
+});
 
 const process = [
   {

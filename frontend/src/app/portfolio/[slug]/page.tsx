@@ -10,6 +10,7 @@ import { getProjects } from "@/lib/api";
 import { projects as staticProjects } from "@/lib/content";
 import { mergeProjects } from "@/lib/project-mapper";
 import type { Project } from "@/lib/content";
+import { buildPageMetadata } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -39,10 +40,12 @@ export async function generateMetadata({
     return { title: "Projet introuvable" };
   }
 
-  return {
+  return buildPageMetadata({
     title: project.title,
-    description: project.excerpt,
-  };
+    description: project.excerpt ?? `Projet ${project.title} — Silas Développe.`,
+    path: `/portfolio/${slug}`,
+    image: project.cover,
+  });
 }
 
 /**

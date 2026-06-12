@@ -16,11 +16,14 @@ import { isAcademyLaunchMode } from "@/lib/launch";
 import { pickPrimarySession } from "@/lib/sessions";
 import { stock } from "@/lib/stock";
 
-export const metadata: Metadata = {
-  title: "SDev Academy",
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "SDev Academy — Formations numériques",
   description:
-    "L'académie SDev — 12 semaines pour devenir développeur produit à l'ère de l'IA. Mentorat, projets réels et certificat.",
-};
+    "L'académie SDev — formations en développement, IA et produits digitaux. Mentorat, projets réels et certificat.",
+  path: "/academy",
+});
 
 const audience = [
   "Étudiants en fin de cursus prêts à passer au monde réel.",

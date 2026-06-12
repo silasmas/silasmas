@@ -7,11 +7,14 @@ import { getProjects } from "@/lib/api";
 import { projects as staticProjects } from "@/lib/content";
 import { mergeProjects } from "@/lib/project-mapper";
 
-export const metadata: Metadata = {
-  title: "Portfolio",
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Portfolio — Projets digitaux",
   description:
-    "Sélection de projets web, mobile et plateformes conçus par Silas Développe.",
-};
+    "Sélection de projets web, mobile et plateformes conçus par Silas Développe à Kinshasa et en Afrique.",
+  path: "/portfolio",
+});
 
 /**
  * Page portfolio — projets depuis l'API Laravel avec repli statique.

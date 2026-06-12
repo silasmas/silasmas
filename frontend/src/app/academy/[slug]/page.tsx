@@ -1,9 +1,39 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AcademySessionLoader } from "@/components/sections/loaders/AcademySessionLoader";
 import { AcademySessionPageSkeleton } from "@/components/skeleton/SectionSkeletons";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { getSessionBySlug } from "@/lib/api";
+import { buildCourseJsonLd, buildPageMetadata } from "@/lib/seo";
 
 interface AcademyPageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * Métadonnées SEO dynamiques par session Academy.
+ */
+export async function generateMetadata({
+  params,
+}: AcademyPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const session = await getSessionBySlug(slug);
+
+  if (!session) {
+    return { title: "Session introuvable" };
+  }
+
+  const description =
+    session.subtitle
+    ?? session.description?.slice(0, 160)
+    ?? `Inscription à la formation ${session.title} — SDev Academy.`;
+
+  return buildPageMetadata({
+    title: session.title,
+    description,
+    path: `/academy/${slug}`,
+    image: session.cover_image_url ?? session.cover_image,
+  });
 }
 
 /**
@@ -11,8 +41,15 @@ interface AcademyPageProps {
  */
 async function AcademySessionPageContent({ params }: AcademyPageProps) {
   const { slug } = await params;
+  const session = await getSessionBySlug(slug);
+  const courseJsonLd = session ? buildCourseJsonLd(session) : null;
 
-  return <AcademySessionLoader slug={slug} />;
+  return (
+    <>
+      {courseJsonLd && <JsonLd data={courseJsonLd} />}
+      <AcademySessionLoader slug={slug} />
+    </>
+  );
 }
 
 /**

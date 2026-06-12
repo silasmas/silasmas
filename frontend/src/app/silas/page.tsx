@@ -10,11 +10,14 @@ import { SilasOffers } from "@/components/site/SilasOffers";
 import { getSiteContent } from "@/lib/api";
 import { mergeSilasPage } from "@/lib/silas-content";
 
-export const metadata: Metadata = {
-  title: "Silas — Le consultant",
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Silas Masimango — Consultant numérique",
   description:
     "Silas Masimango : entrepreneur numérique, consultant produit et fondateur de la SDev Academy. Stratégie, accompagnement et conférences.",
-};
+  path: "/silas",
+});
 
 /**
  * Page Silas — contenu éditorial depuis le CMS Filament.

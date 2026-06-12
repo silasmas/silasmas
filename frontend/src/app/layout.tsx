@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Script from "next/script";
 import { ActiveSessionPromoLazy } from "@/components/academy/ActiveSessionPromoLazy";
+import { SiteAnalyticsTracker } from "@/components/analytics/SiteAnalyticsTracker";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
@@ -16,6 +18,7 @@ import {
 } from "@/lib/launch";
 import { pickPrimarySession } from "@/lib/sessions";
 import { resolveSiteFaviconIcons } from "@/lib/site-favicon";
+import { buildOrganizationJsonLd, buildPageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -59,22 +62,21 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteContent = await getSiteContent();
   const settings = siteContent?.settings ?? FALLBACK_SITE_SETTINGS;
 
+  const title = `${settings.site_title} — Studio numérique & SDev Academy`;
+  const description = settings.footer_description ?? site.description;
+
   return {
+    ...buildPageMetadata({
+      title,
+      description,
+      path: "/",
+    }),
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? site.url),
     title: {
-      default: `${settings.site_title} — Studio numérique & SDev Academy`,
+      default: title,
       template: `%s — ${settings.site_title}`,
     },
-    description: settings.footer_description ?? site.description,
     icons: resolveSiteFaviconIcons(settings.favicon_url),
-    openGraph: {
-      title: `${settings.site_title} — Studio numérique & SDev Academy`,
-      description: settings.footer_description ?? site.description,
-      url: site.url,
-      siteName: settings.site_title,
-      locale: "fr_FR",
-      type: "website",
-    },
   };
 }
 
@@ -102,6 +104,10 @@ export default async function RootLayout({
     ? `${getPrimaryRegistrationHref(primarySlug)}#inscription`
     : "/contact";
   const ctaLabel = launchMode ? "S'inscrire" : "Démarrer un projet";
+  const jsonLd = buildOrganizationJsonLd(
+    settings.site_title ?? site.name,
+    settings.footer_description ?? site.description
+  );
 
   return (
     <html
@@ -120,6 +126,7 @@ export default async function RootLayout({
       }
     >
       <body className="min-h-full flex flex-col bg-bg text-ink">
+        <JsonLd data={jsonLd} />
         <Script
           id="sd-theme-boot"
           strategy="beforeInteractive"
@@ -139,6 +146,7 @@ export default async function RootLayout({
               }
             />
             <ActiveSessionPromoLazy session={primarySession} />
+            <SiteAnalyticsTracker />
           </ThemeProvider>
         </SiteSettingsProvider>
       </body>

@@ -43,6 +43,10 @@ Route::post('contact', [\App\Http\Controllers\API\ContactController::class, 'sto
 
 Route::get('site', [\App\Http\Controllers\API\SiteController::class, 'index'])->name('site.index');
 
+Route::post('analytics/track', [\App\Http\Controllers\API\SiteAnalyticsController::class, 'track'])
+  ->middleware('throttle:180,1')
+  ->name('analytics.track');
+
 /*
 |--------------------------------------------------------------------------
 | Custom API resource

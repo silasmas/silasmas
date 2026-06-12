@@ -4,7 +4,7 @@ export const site = {
   tagline: "Consultant numérique, studio digital et académie de formation à Kinshasa.",
   description:
     "Silas Masimango — consultant numérique, fondateur du Studio Silas Développe et de la SDev Academy. Stratégie, produits digitaux et formation pour l'Afrique.",
-  url: "https://silasmas.cd",
+  url: "https://silasmas.com",
   email: "ir-masimango@silasmas.com",
   phone: "+243 827 839 232",
   phoneAlt: "+243 993 107 499",

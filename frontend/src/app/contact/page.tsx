@@ -4,13 +4,15 @@ import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/site/Container";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { ContactForm } from "@/components/site/ContactForm";
+import { buildPageMetadata } from "@/lib/seo";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Contact",
+export const metadata: Metadata = buildPageMetadata({
+  title: "Contact — Silas Développe",
   description:
-    "Parlons de votre projet, de votre marque ou de votre prochaine cohorte.",
-};
+    "Parlons de votre projet, de votre marque ou de votre prochaine cohorte SDev Academy.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (
