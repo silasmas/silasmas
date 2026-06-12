@@ -6,6 +6,8 @@ import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 interface RegistrationOpensCountdownProps {
   targetIso: string;
   targetLabel: string;
+  /** compact : modale promo · default : page pré-inscription */
+  variant?: "default" | "compact";
 }
 
 interface CountdownParts {
@@ -43,8 +45,10 @@ function getParts(targetIso: string): CountdownParts {
 export function RegistrationOpensCountdown({
   targetIso,
   targetLabel,
+  variant = "default",
 }: RegistrationOpensCountdownProps) {
   const [parts, setParts] = useState(() => getParts(targetIso));
+  const isCompact = variant === "compact";
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -58,9 +62,17 @@ export function RegistrationOpensCountdown({
 
   if (parts.opened) {
     return (
-      <div className={`card-lg rounded-2xl px-6 py-8 text-center ${REGISTRATION_STATUS_STYLES.success}`}>
-        <p className="text-lg font-semibold">Les inscriptions sont ouvertes</p>
-        <p className="mt-2 text-sm opacity-90">Depuis le {targetLabel}</p>
+      <div
+        className={`rounded-xl text-center ${REGISTRATION_STATUS_STYLES.success} ${
+          isCompact ? "px-4 py-3" : "card-lg rounded-2xl px-6 py-8"
+        }`}
+      >
+        <p className={`font-semibold ${isCompact ? "text-sm" : "text-lg"}`}>
+          Les inscriptions sont ouvertes
+        </p>
+        {!isCompact && (
+          <p className="mt-2 text-sm opacity-90">Depuis le {targetLabel}</p>
+        )}
       </div>
     );
   }
@@ -68,26 +80,37 @@ export function RegistrationOpensCountdown({
   const cells = [
     { label: "Jours", value: parts.days },
     { label: "Heures", value: parts.hours },
-    { label: "Minutes", value: parts.minutes },
-    { label: "Secondes", value: parts.seconds },
+    { label: "Min.", value: parts.minutes },
+    { label: "Sec.", value: parts.seconds },
   ];
 
   return (
-    <div className="card-lg rounded-2xl border border-academy/20 bg-academy-soft/40 px-4 py-6">
-      <p className="mb-4 text-center text-sm text-muted">
-        Ouverture des inscriptions le{" "}
-        <strong className="text-academy">{targetLabel}</strong>
+    <div
+      className={
+        isCompact
+          ? "rounded-xl border border-academy/20 bg-academy-soft/40 px-3 py-3"
+          : "card-lg rounded-2xl border border-academy/20 bg-academy-soft/40 px-4 py-6"
+      }
+    >
+      <p className={`mb-3 text-center text-muted ${isCompact ? "text-xs" : "text-sm"}`}>
+        Ouverture le <strong className="text-academy">{targetLabel}</strong>
       </p>
-      <div className="grid grid-cols-4 gap-2 sm:gap-4">
+      <div className={`grid grid-cols-4 ${isCompact ? "gap-1.5" : "gap-2 sm:gap-4"}`}>
         {cells.map((cell) => (
           <div
             key={cell.label}
-            className="rounded-xl border border-line bg-bg-elev px-2 py-3 text-center"
+            className={`rounded-lg border border-line bg-bg-elev text-center ${
+              isCompact ? "px-1 py-2" : "rounded-xl px-2 py-3"
+            }`}
           >
-            <span className="block text-2xl font-bold tabular-nums text-academy sm:text-3xl">
+            <span
+              className={`block font-bold tabular-nums text-academy ${
+                isCompact ? "text-lg" : "text-2xl sm:text-3xl"
+              }`}
+            >
               {String(cell.value).padStart(2, "0")}
             </span>
-            <span className="text-xs text-muted">{cell.label}</span>
+            <span className="text-[10px] text-muted sm:text-xs">{cell.label}</span>
           </div>
         ))}
       </div>

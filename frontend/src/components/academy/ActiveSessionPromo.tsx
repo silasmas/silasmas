@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { RegistrationOpensCountdown } from "@/components/academy/RegistrationOpensCountdown";
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useSpotVideoModal } from "@/components/academy/SpotVideoModal";
@@ -39,9 +40,38 @@ function isAcademyRegistrationPath(pathname: string): boolean {
   return /^\/academy\/[^/]+$/.test(pathname);
 }
 
+/**
+ * Indique si la session peut afficher la modale promo (ouverte ou pré-inscription).
+ *
+ * @param session Session Academy
+ * @return true si la promo est pertinente
+ */
+function sessionShowsPromo(session: TrainingSession): boolean {
+  return session.status === "open" || Boolean(session.shows_pre_registration_page);
+}
+
+/**
+ * Libellé formaté de la date d'ouverture des inscriptions.
+ *
+ * @param session Session Academy
+ * @return Texte affichable ou chaîne vide
+ */
+function registrationOpensLabel(session: TrainingSession): string {
+  if (session.registration_opens_at_label) {
+    return session.registration_opens_at_label;
+  }
+
+  if (!session.registration_opens_at) {
+    return "";
+  }
+
+  return new Date(session.registration_opens_at).toLocaleString("fr-FR");
+}
+
 function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
   const pathname = usePathname();
   const isRegistrationPage = isAcademyRegistrationPath(pathname);
+  const isPreRegistration = Boolean(session.shows_pre_registration_page);
   const [modalOpen, setModalOpen] = useState(false);
   const [fabVisible, setFabVisible] = useState(false);
   const { openModal, SpotVideoModal } = useSpotVideoModal(session);
@@ -69,6 +99,21 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
       ? `${session.price} ${session.currency ?? "USD"}`
       : "Gratuit");
   const benefits = useRegistrationBenefits(session.slug, session);
+  const opensLabel = registrationOpensLabel(session);
+  const promoMessage = isPreRegistration
+    ? session.pre_registration_message
+    : session.description;
+  const eyebrow = isPreRegistration
+    ? "Pré-inscription — SDev Academy"
+    : "Session en cours — SDev Academy";
+  const ctaLabel = isPreRegistration ? "Me pré-inscrire" : "S'inscrire maintenant";
+  const ctaHref = isPreRegistration
+    ? `/academy/${session.slug}`
+    : `/academy/${session.slug}#inscription`;
+  const fabLabel = isPreRegistration ? "Pré-inscription" : "Session Academy";
+  const fabAriaLabel = isPreRegistration
+    ? "Voir la pré-inscription Academy"
+    : "Voir la session Academy en cours";
 
   const closeModal = () => {
     setModalOpen(false);
@@ -97,10 +142,15 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
 
             <div className="session-modal-grid session-modal-grid-promo">
               <div className="session-modal-poster-col">
-                <SessionPoster session={session} priority variant="modal" />
+                <SessionPoster
+                  session={session}
+                  priority
+                  variant="modal"
+                  preferPreRegistrationCover={isPreRegistration}
+                />
               </div>
               <div className="session-modal-content">
-                <p className="section-eyebrow mb-2">Session en cours — SDev Academy</p>
+                <p className="section-eyebrow mb-2">{eyebrow}</p>
                 <h2
                   id="session-promo-title"
                   className="font-display mb-2 text-2xl leading-tight tracking-tight md:text-3xl"
@@ -115,12 +165,25 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
                 <p className="mb-4 inline-flex rounded-full border border-academy/30 bg-academy-soft px-4 py-1.5 text-sm font-bold text-academy">
                   Frais : {priceLabel}
                 </p>
-                {session.description && (
-                  <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-2">
-                    {session.description}
+
+                {isPreRegistration && session.registration_opens_at && (
+                  <div className="mb-4">
+                    <RegistrationOpensCountdown
+                      targetIso={session.registration_opens_at}
+                      targetLabel={opensLabel}
+                      variant="compact"
+                    />
+                  </div>
+                )}
+
+                {promoMessage && (
+                  <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-3">
+                    {promoMessage}
                   </p>
                 )}
+
                 <SessionRegistrationBenefits benefits={benefits} variant="modal" />
+
                 <div className="mt-auto flex flex-wrap gap-3 pt-1">
                   {hasVideo && (
                     <button type="button" className="btn btn-outline" onClick={openModal}>
@@ -128,11 +191,11 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
                     </button>
                   )}
                   <Link
-                    href={`/academy/${session.slug}#inscription`}
+                    href={ctaHref}
                     className="btn btn-gold btn-lg"
                     onClick={closeModal}
                   >
-                    S&apos;inscrire maintenant
+                    {ctaLabel}
                   </Link>
                   <button type="button" className="btn btn-outline" onClick={closeModal}>
                     Plus tard
@@ -151,10 +214,10 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
           type="button"
           className={`session-fab${isRegistrationPage ? " session-fab--registration" : ""}`}
           onClick={() => setModalOpen(true)}
-          aria-label="Voir la session Academy en cours"
+          aria-label={fabAriaLabel}
         >
           <span className="session-fab-dot" aria-hidden />
-          Session Academy
+          {fabLabel}
         </button>
       )}
     </>
@@ -162,7 +225,7 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
 }
 
 /**
- * Modale d'accueil pour la session ouverte + bouton flottant de rappel.
+ * Modale d'accueil pour la session ouverte ou en pré-inscription + bouton flottant de rappel.
  */
 export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPromoProps) {
   const pathname = usePathname();
@@ -173,7 +236,7 @@ export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPro
   }, [initialSession]);
 
   useEffect(() => {
-    if (session?.status === "open") {
+    if (session && sessionShowsPromo(session)) {
       return;
     }
 
@@ -190,7 +253,7 @@ export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPro
 
         const primary = pickPrimarySession(json.data);
 
-        if (primary?.status === "open") {
+        if (primary && sessionShowsPromo(primary)) {
           setSession(primary);
         }
       })
@@ -199,9 +262,9 @@ export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPro
     return () => {
       cancelled = true;
     };
-  }, [session?.status]);
+  }, [session?.status, session?.shows_pre_registration_page]);
 
-  if (!session || session.status !== "open" || isPromoHiddenPath(pathname)) {
+  if (!session || !sessionShowsPromo(session) || isPromoHiddenPath(pathname)) {
     return null;
   }
 
