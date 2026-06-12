@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TrainingSessionResource\Pages;
+use App\Filament\Resources\TrainingSessionResource\RelationManagers;
 use App\Models\TrainingSession;
 use App\Support\MobileMoneyOperators;
 use Filament\Forms;
@@ -220,6 +221,11 @@ class TrainingSessionResource extends Resource
               ->imageEditor()
               ->helperText('Optionnel — sinon l\'affiche principale de la session est utilisée.')
               ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled')),
+            Forms\Components\Placeholder::make('pre_registration_email_info')
+              ->label('E-mail d\'ouverture')
+              ->content('Les pré-inscrits reçoivent automatiquement un e-mail le jour J (date d\'ouverture) avec le lien d\'inscription, dès que le statut de la session est « Inscriptions ouvertes ». Gérez la liste dans Pré-inscriptions.')
+              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled'))
+              ->columnSpanFull(),
           ])
           ->columns(2),
         Forms\Components\Section::make('Page d\'inscription')
@@ -352,6 +358,16 @@ class TrainingSessionResource extends Resource
           Tables\Actions\DeleteBulkAction::make(),
         ]),
       ]);
+  }
+
+  /**
+   * @return array<class-string>
+   */
+  public static function getRelations(): array
+  {
+    return [
+      RelationManagers\PreRegistrationsRelationManager::class,
+    ];
   }
 
   /**

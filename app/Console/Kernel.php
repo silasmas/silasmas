@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('academy:send-reminders')->dailyAt('08:00');
+        $schedule->command('academy:notify-pre-registration-open')->everyThirtyMinutes();
     }
 
     /**

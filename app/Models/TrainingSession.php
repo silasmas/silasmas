@@ -336,6 +336,14 @@ class TrainingSession extends Model
   }
 
   /**
+   * Pré-inscriptions en attente pour cette session.
+   */
+  public function preRegisteredRegistrations()
+  {
+    return $this->hasMany(Registration::class)->where('status', 'pre_registered');
+  }
+
+  /**
    * URL publique de l'affiche (storage/app/public).
    *
    * @return string|null URL absolue ou null

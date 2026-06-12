@@ -120,6 +120,8 @@ class AcademyController extends BaseController
         'source' => 'pre_registration',
         'registered_at' => now(),
         'motivation' => null,
+        'notify_email' => true,
+        'pre_registration_notified_at' => null,
       ]);
     } else {
       Registration::create([
@@ -128,7 +130,7 @@ class AcademyController extends BaseController
         'status' => 'pre_registered',
         'source' => 'pre_registration',
         'registered_at' => now(),
-        'notify_email' => (bool) ($session->notify_by_email ?? true),
+        'notify_email' => true,
       ]);
     }
 

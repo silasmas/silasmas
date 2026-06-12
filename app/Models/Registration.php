@@ -22,6 +22,7 @@ class Registration extends Model
     'notify_whatsapp' => 'boolean',
     'confidentiality_accepted_at' => 'datetime',
     'confirmation_notified_at' => 'datetime',
+    'pre_registration_notified_at' => 'datetime',
     'last_reminder_at' => 'datetime',
   ];
 

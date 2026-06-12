@@ -120,6 +120,11 @@ class RegistrationResource extends Resource
           ->label('Inscrit le')
           ->dateTime('d/m/Y H:i')
           ->sortable(),
+        Tables\Columns\TextColumn::make('pre_registration_notified_at')
+          ->label('Notif. ouverture')
+          ->dateTime('d/m/Y H:i')
+          ->placeholder('—')
+          ->toggleable(isToggledHiddenByDefault: true),
       ])
       ->defaultSort('registered_at', 'desc')
       ->filters([
