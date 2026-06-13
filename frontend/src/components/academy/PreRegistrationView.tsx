@@ -3,6 +3,7 @@ import { RegistrationOpensCountdown } from "@/components/academy/RegistrationOpe
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { RichHtmlContent } from "@/components/site/RichHtmlContent";
+import { RichHtmlReadMore } from "@/components/site/RichHtmlReadMore";
 import { Container } from "@/components/site/Container";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import type { TrainingSession } from "@/types/api";
@@ -127,13 +128,21 @@ export function PreRegistrationView({ session }: PreRegistrationViewProps) {
             {session.description && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Description</h2>
-                <RichHtmlContent html={session.description} className="text-muted" />
+                <RichHtmlReadMore
+                  html={session.description}
+                  className="text-muted"
+                  variant="card"
+                />
               </div>
             )}
             {session.program && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Programme</h2>
-                <RichHtmlContent html={session.program} className="text-sm text-muted" />
+                <RichHtmlReadMore
+                  html={session.program}
+                  className="text-sm text-muted"
+                  variant="card"
+                />
               </div>
             )}
           </div>

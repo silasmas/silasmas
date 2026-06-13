@@ -628,3 +628,7 @@ body {
   background: linear-gradient(to bottom, transparent, var(--bg-elev));
   pointer-events: none;
 }
+
+.rich-html-read-more--card.rich-html-read-more--collapsed::after {
+  height: 3rem;
+}
