@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { RichHtmlContent } from "@/components/site/RichHtmlContent";
 
 interface ConfidentialityModalProps {
   open: boolean;
@@ -55,8 +56,8 @@ export function ConfidentialityModal({
             <p className="mt-1 text-sm text-amber-300/90">Ressource : {resourceTitle}</p>
           )}
         </div>
-        <div className="max-h-[50vh] overflow-y-auto px-6 py-4 text-sm leading-relaxed text-slate-300 whitespace-pre-wrap">
-          {notice}
+        <div className="max-h-[50vh] overflow-y-auto px-6 py-4 text-sm text-slate-300">
+          <RichHtmlContent html={notice} className="rich-html--dark" />
         </div>
         <div className="flex flex-wrap justify-end gap-3 border-t border-white/10 px-6 py-4">
           <button type="button" className="btn btn-outline" onClick={onClose}>

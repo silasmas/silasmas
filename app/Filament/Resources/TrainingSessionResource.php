@@ -34,6 +34,38 @@ class TrainingSessionResource extends Resource
   protected static ?string $navigationLabel = 'Sessions';
 
   /**
+   * Barre d'outils standard des éditeurs riches (description, programme, notices…).
+   *
+   * @return list<string>
+   */
+  protected static function richEditorToolbar(): array
+  {
+    return [
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'h2',
+      'h3',
+      'bulletList',
+      'orderedList',
+      'link',
+      'blockquote',
+    ];
+  }
+
+  /**
+   * Champ RichEditor préconfiguré pour les textes longs de session.
+   */
+  protected static function richTextField(string $name, string $label): Forms\Components\RichEditor
+  {
+    return Forms\Components\RichEditor::make($name)
+      ->label($label)
+      ->toolbarButtons(static::richEditorToolbar())
+      ->columnSpanFull();
+  }
+
+  /**
    * Formulaire de création / édition.
    */
   public static function form(Form $form): Form
@@ -59,14 +91,8 @@ class TrainingSessionResource extends Resource
               ->label('Sous-titre')
               ->maxLength(255)
               ->columnSpanFull(),
-            Forms\Components\Textarea::make('description')
-              ->label('Description')
-              ->rows(4)
-              ->columnSpanFull(),
-            Forms\Components\Textarea::make('program')
-              ->label('Programme')
-              ->rows(8)
-              ->columnSpanFull(),
+            static::richTextField('description', 'Description'),
+            static::richTextField('program', 'Programme'),
           ])
           ->columns(2),
         Forms\Components\Section::make('Planification')
@@ -205,12 +231,9 @@ class TrainingSessionResource extends Resource
               ->helperText('Date/heure cible du compte à rebours et bascule vers le formulaire complet.')
               ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled'))
               ->required(fn (Get $get): bool => (bool) $get('pre_registration_enabled')),
-            Forms\Components\Textarea::make('pre_registration_message')
-              ->label('Message d\'annonce')
-              ->rows(4)
+            static::richTextField('pre_registration_message', 'Message d\'annonce')
               ->helperText('Texte affiché au-dessus du compte à rebours (ex. « Inscriptions bientôt ouvertes »).')
-              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled'))
-              ->columnSpanFull(),
+              ->visible(fn (Get $get): bool => (bool) $get('pre_registration_enabled')),
             Forms\Components\FileUpload::make('pre_registration_cover_image')
               ->label('Affiche pré-inscription')
               ->image()
@@ -240,16 +263,10 @@ class TrainingSessionResource extends Resource
           ]),
         Forms\Components\Section::make('Espace participant & ressources')
           ->schema([
-            Forms\Components\Textarea::make('participant_benefits')
-              ->label('Droits / avantages affichés')
-              ->rows(4)
-              ->helperText('Texte visible dans l\'espace participant (accès, support, certificat, etc.).')
-              ->columnSpanFull(),
-            Forms\Components\Textarea::make('confidentiality_notice')
-              ->label('Notice de confidentialité')
-              ->rows(6)
-              ->helperText('Affichée dans une modale avant d\'ouvrir une ressource.')
-              ->columnSpanFull(),
+            static::richTextField('participant_benefits', 'Droits / avantages affichés')
+              ->helperText('Texte visible dans l\'espace participant (accès, support, certificat, etc.).'),
+            static::richTextField('confidentiality_notice', 'Notice de confidentialité')
+              ->helperText('Affichée dans une modale avant d\'ouvrir une ressource.'),
             Forms\Components\Repeater::make('session_resources')
               ->label('Ressources de la session')
               ->schema([
@@ -262,9 +279,14 @@ class TrainingSessionResource extends Resource
                   ->url()
                   ->required()
                   ->maxLength(500),
-                Forms\Components\Textarea::make('description')
+                Forms\Components\RichEditor::make('description')
                   ->label('Description courte')
-                  ->rows(2)
+                  ->toolbarButtons([
+                    'bold',
+                    'italic',
+                    'bulletList',
+                    'link',
+                  ])
                   ->maxLength(500),
               ])
               ->columns(2)

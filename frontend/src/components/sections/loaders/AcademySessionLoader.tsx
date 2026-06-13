@@ -3,6 +3,7 @@ import { AcademySessionRegistration } from "@/components/academy/AcademySessionR
 import { PreRegistrationView } from "@/components/academy/PreRegistrationView";
 import { ScrollToFormFab } from "@/components/academy/ScrollToFormFab";
 import { SessionPoster } from "@/components/academy/SessionPoster";
+import { RichHtmlContent } from "@/components/site/RichHtmlContent";
 import { Container } from "@/components/site/Container";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import { getOpenSessions, getSessionBySlug } from "@/lib/api";
@@ -68,15 +69,13 @@ export async function AcademySessionLoader({ slug }: AcademySessionLoaderProps) 
             {session.description && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Description</h2>
-                <p className="text-muted leading-relaxed">{session.description}</p>
+                <RichHtmlContent html={session.description} className="text-muted" />
               </div>
             )}
             {session.program && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Programme</h2>
-                <pre className="whitespace-pre-wrap font-sans text-sm text-muted leading-relaxed">
-                  {session.program}
-                </pre>
+                <RichHtmlContent html={session.program} className="text-sm text-muted" />
               </div>
             )}
           </div>

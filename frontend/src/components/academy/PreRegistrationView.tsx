@@ -2,6 +2,7 @@ import { PreRegistrationForm } from "@/components/academy/PreRegistrationForm";
 import { RegistrationOpensCountdown } from "@/components/academy/RegistrationOpensCountdown";
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
+import { RichHtmlContent } from "@/components/site/RichHtmlContent";
 import { Container } from "@/components/site/Container";
 import { Eyebrow } from "@/components/site/Eyebrow";
 import type { TrainingSession } from "@/types/api";
@@ -61,9 +62,12 @@ export function PreRegistrationView({ session }: PreRegistrationViewProps) {
             <p className="mt-4 max-w-3xl text-lg text-muted md:text-xl">{session.subtitle}</p>
           )}
           {session.pre_registration_message && (
-            <p className="mt-5 max-w-3xl rounded-2xl border border-academy/20 bg-academy-soft/30 px-5 py-4 text-base leading-relaxed text-ink md:text-lg">
-              {session.pre_registration_message}
-            </p>
+            <div className="mt-5 max-w-3xl rounded-2xl border border-academy/20 bg-academy-soft/30 px-5 py-4 md:text-lg">
+              <RichHtmlContent
+                html={session.pre_registration_message}
+                className="text-base text-ink"
+              />
+            </div>
           )}
         </div>
 
@@ -123,15 +127,13 @@ export function PreRegistrationView({ session }: PreRegistrationViewProps) {
             {session.description && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Description</h2>
-                <p className="text-muted leading-relaxed">{session.description}</p>
+                <RichHtmlContent html={session.description} className="text-muted" />
               </div>
             )}
             {session.program && (
               <div className="card-lg p-6 md:p-7">
                 <h2 className="font-display mb-3 text-2xl tracking-tight">Programme</h2>
-                <pre className="whitespace-pre-wrap font-sans text-sm text-muted leading-relaxed">
-                  {session.program}
-                </pre>
+                <RichHtmlContent html={session.program} className="text-sm text-muted" />
               </div>
             )}
           </div>

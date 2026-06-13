@@ -8,6 +8,8 @@ import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useSpotVideoModal } from "@/components/academy/SpotVideoModal";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
+import { RichHtmlContent } from "@/components/site/RichHtmlContent";
+import { richTextExcerpt } from "@/lib/rich-html";
 import { pickPrimarySession } from "@/lib/sessions";
 import type { ApiResponse, TrainingSession } from "@/types/api";
 
@@ -100,9 +102,15 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
       : "Gratuit");
   const benefits = useRegistrationBenefits(session.slug, session);
   const opensLabel = registrationOpensLabel(session);
-  const promoMessage = isPreRegistration
-    ? session.pre_registration_message
-    : session.description;
+  const promoExcerpt =
+    richTextExcerpt(
+      isPreRegistration ? session.pre_registration_message : session.description,
+      220,
+    )
+    || (isPreRegistration ? session.pre_registration_message : session.description);
+  const showPromoMessage = isPreRegistration
+    ? Boolean(session.pre_registration_message?.trim())
+    : Boolean(promoExcerpt?.trim());
   const eyebrow = isPreRegistration
     ? "Pré-inscription — SDev Academy"
     : "Session en cours — SDev Academy";
@@ -176,10 +184,16 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
                   </div>
                 )}
 
-                {promoMessage && (
-                  <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-3">
-                    {promoMessage}
-                  </p>
+                {showPromoMessage && (
+                  isPreRegistration && session.pre_registration_message ? (
+                    <div className="mb-4 text-sm text-muted leading-relaxed line-clamp-4 md:text-base">
+                      <RichHtmlContent html={session.pre_registration_message} />
+                    </div>
+                  ) : (
+                    <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-3 md:text-base">
+                      {promoExcerpt}
+                    </p>
+                  )
                 )}
 
                 <SessionRegistrationBenefits benefits={benefits} variant="modal" />

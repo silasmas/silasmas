@@ -4,6 +4,7 @@ import { AcademySessionLoader } from "@/components/sections/loaders/AcademySessi
 import { AcademySessionPageSkeleton } from "@/components/skeleton/SectionSkeletons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSessionBySlug } from "@/lib/api";
+import { richTextExcerpt } from "@/lib/rich-html";
 import { buildCourseJsonLd, buildPageMetadata } from "@/lib/seo";
 
 interface AcademyPageProps {
@@ -25,7 +26,7 @@ export async function generateMetadata({
 
   const description =
     session.subtitle
-    ?? session.description?.slice(0, 160)
+    ?? richTextExcerpt(session.description, 160)
     ?? `Inscription à la formation ${session.title} — SDev Academy.`;
 
   return buildPageMetadata({

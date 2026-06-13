@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { RichHtmlContent } from "@/components/site/RichHtmlContent";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ParticipantCountdown } from "@/components/academy/ParticipantCountdown";
 import { SessionResourcesPanel } from "@/components/academy/SessionResourcesPanel";
@@ -154,9 +155,10 @@ function ParticipantSpaceContent({ token }: ParticipantSpaceViewProps) {
           <h2 className="font-display mb-3 text-xl tracking-tight text-ink">
             Ce qui vous attend
           </h2>
-          <p className="whitespace-pre-wrap text-sm text-ink-soft leading-relaxed">
-            {data.session.participant_benefits}
-          </p>
+          <RichHtmlContent
+            html={data.session.participant_benefits}
+            className="text-sm text-ink-soft"
+          />
         </div>
       )}
 
