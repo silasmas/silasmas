@@ -1,5 +1,5 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+/** Endpoint same-origin (proxy Next.js → API Laravel). */
+const ANALYTICS_TRACK_PATH = "/api/analytics/track";
 
 const VISITOR_KEY = "sd-visitor-key";
 
@@ -35,11 +35,11 @@ export function getVisitorKey(): string {
 }
 
 /**
- * Envoie un événement analytics à l'API Laravel (fire-and-forget).
+ * Envoie un événement analytics via le proxy same-origin (silasmas.com → API).
  */
 export async function trackAnalyticsEvent(payload: AnalyticsEventPayload): Promise<void> {
   try {
-    await fetch(`${API_BASE}/analytics/track`, {
+    const response = await fetch(ANALYTICS_TRACK_PATH, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -53,8 +53,14 @@ export async function trackAnalyticsEvent(payload: AnalyticsEventPayload): Promi
       }),
       keepalive: true,
     });
-  } catch {
-    // Ne pas bloquer l'UX si l'API est indisponible
+
+    if (!response.ok && process.env.NODE_ENV === "development") {
+      console.warn("[analytics] échec HTTP", response.status);
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[analytics] requête impossible", error);
+    }
   }
 }
 
