@@ -1,3 +1,5 @@
+"use client";
+
 import { sanitizeRichHtml } from "@/lib/rich-html";
 
 interface RichHtmlContentProps {

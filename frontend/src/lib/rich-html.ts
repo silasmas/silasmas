@@ -1,4 +1,30 @@
 /**
+ * Décode les entités HTML (contenu échappé par l'API ou double-encodé).
+ */
+export function decodeHtmlEntities(value: string): string {
+  let decoded = value;
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    const next = decoded
+      .replace(/&nbsp;/gi, "\u00A0")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0?39;/gi, "'")
+      .replace(/&#x27;/gi, "'")
+      .replace(/&amp;/gi, "&");
+
+    if (next === decoded) {
+      break;
+    }
+
+    decoded = next;
+  }
+
+  return decoded;
+}
+
+/**
  * Indique si le contenu ressemble à du HTML (éditeur riche Filament).
  */
 export function looksLikeHtml(value: string): boolean {
@@ -21,7 +47,7 @@ export function stripHtml(value: string): string {
  * Nettoie le HTML admin avant affichage (contenu de confiance, sans scripts).
  */
 export function sanitizeRichHtml(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = decodeHtmlEntities(value.trim());
 
   if (trimmed === "") {
     return "";
