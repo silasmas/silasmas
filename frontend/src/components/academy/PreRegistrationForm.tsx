@@ -139,7 +139,8 @@ export function PreRegistrationForm({ session }: PreRegistrationFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="btn-primary w-full py-3.5 text-base disabled:opacity-60"
+        className="btn btn-gold btn-lg w-full disabled:cursor-not-allowed disabled:opacity-60"
+        data-track-click="Me pré-inscrire"
       >
         {loading ? "Envoi en cours…" : "Me pré-inscrire"}
       </button>
