@@ -306,14 +306,17 @@ body {
 
 .session-modal-promo {
   width: min(1000px, 96vw);
-  max-height: min(88vh, 680px);
+  max-height: min(92vh, 720px);
   padding: 1.5rem 1.75rem;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .session-modal-grid-promo {
-  align-items: center;
-  max-height: calc(min(88vh, 680px) - 3rem);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -336,10 +339,26 @@ body {
 .session-modal-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
   padding-top: 0.25rem;
   padding-right: 0.5rem;
+}
+
+.session-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.session-modal-actions {
+  flex-shrink: 0;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
 }
 
 .session-modal-close {
@@ -594,4 +613,18 @@ body {
 .rich-html--dark a,
 .rich-html.rich-html--dark a {
   color: rgb(251 191 36);
+}
+
+.rich-html-read-more--collapsed {
+  position: relative;
+  overflow: hidden;
+}
+
+.rich-html-read-more--collapsed::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2.5rem;
+  background: linear-gradient(to bottom, transparent, var(--bg-elev));
+  pointer-events: none;
 }

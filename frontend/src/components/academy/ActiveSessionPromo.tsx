@@ -8,8 +8,7 @@ import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
 import { useSpotVideoModal } from "@/components/academy/SpotVideoModal";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
-import { RichHtmlContent } from "@/components/site/RichHtmlContent";
-import { richTextExcerpt } from "@/lib/rich-html";
+import { RichHtmlReadMore } from "@/components/site/RichHtmlReadMore";
 import { pickPrimarySession } from "@/lib/sessions";
 import type { ApiResponse, TrainingSession } from "@/types/api";
 
@@ -102,15 +101,10 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
       : "Gratuit");
   const benefits = useRegistrationBenefits(session.slug, session);
   const opensLabel = registrationOpensLabel(session);
-  const promoExcerpt =
-    richTextExcerpt(
-      isPreRegistration ? session.pre_registration_message : session.description,
-      220,
-    )
-    || (isPreRegistration ? session.pre_registration_message : session.description);
-  const showPromoMessage = isPreRegistration
-    ? Boolean(session.pre_registration_message?.trim())
-    : Boolean(promoExcerpt?.trim());
+  const promoHtml = isPreRegistration
+    ? session.pre_registration_message ?? ""
+    : session.description ?? "";
+  const showPromoMessage = Boolean(promoHtml.trim());
   const eyebrow = isPreRegistration
     ? "Pré-inscription — SDev Academy"
     : "Session en cours — SDev Academy";
@@ -158,47 +152,44 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
                 />
               </div>
               <div className="session-modal-content">
-                <p className="section-eyebrow mb-2">{eyebrow}</p>
-                <h2
-                  id="session-promo-title"
-                  className="font-display mb-2 text-2xl leading-tight tracking-tight md:text-3xl"
-                >
-                  {session.title}
-                </h2>
-                {session.subtitle && (
-                  <p className="mb-3 text-sm text-muted md:text-base line-clamp-2">
-                    {session.subtitle}
-                  </p>
-                )}
-                <p className="mb-4 inline-flex rounded-full border border-academy/30 bg-academy-soft px-4 py-1.5 text-sm font-bold text-academy">
-                  Frais : {priceLabel}
-                </p>
-
-                {isPreRegistration && session.registration_opens_at && (
-                  <div className="mb-4">
-                    <RegistrationOpensCountdown
-                      targetIso={session.registration_opens_at}
-                      targetLabel={opensLabel}
-                      variant="compact"
-                    />
-                  </div>
-                )}
-
-                {showPromoMessage && (
-                  isPreRegistration && session.pre_registration_message ? (
-                    <div className="mb-4 text-sm text-muted leading-relaxed line-clamp-4 md:text-base">
-                      <RichHtmlContent html={session.pre_registration_message} />
-                    </div>
-                  ) : (
-                    <p className="mb-4 text-sm text-muted leading-relaxed line-clamp-3 md:text-base">
-                      {promoExcerpt}
+                <div className="session-modal-body">
+                  <p className="section-eyebrow mb-2">{eyebrow}</p>
+                  <h2
+                    id="session-promo-title"
+                    className="font-display mb-2 text-2xl leading-tight tracking-tight md:text-3xl"
+                  >
+                    {session.title}
+                  </h2>
+                  {session.subtitle && (
+                    <p className="mb-3 text-sm text-muted md:text-base line-clamp-2">
+                      {session.subtitle}
                     </p>
-                  )
-                )}
+                  )}
+                  <p className="mb-4 inline-flex rounded-full border border-academy/30 bg-academy-soft px-4 py-1.5 text-sm font-bold text-academy">
+                    Frais : {priceLabel}
+                  </p>
 
-                <SessionRegistrationBenefits benefits={benefits} variant="modal" />
+                  {isPreRegistration && session.registration_opens_at && (
+                    <div className="mb-4">
+                      <RegistrationOpensCountdown
+                        targetIso={session.registration_opens_at}
+                        targetLabel={opensLabel}
+                        variant="compact"
+                      />
+                    </div>
+                  )}
 
-                <div className="mt-auto flex flex-wrap gap-3 pt-1">
+                  {showPromoMessage && (
+                    <RichHtmlReadMore
+                      html={promoHtml}
+                      className="mb-4 text-sm text-muted leading-relaxed md:text-base"
+                    />
+                  )}
+
+                  <SessionRegistrationBenefits benefits={benefits} variant="modal" />
+                </div>
+
+                <div className="session-modal-actions flex flex-wrap gap-3">
                   {hasVideo && (
                     <button type="button" className="btn btn-outline" onClick={openModal}>
                       Voir le spot
