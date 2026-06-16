@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Script from "next/script";
 import { ActiveSessionPromoLazy } from "@/components/academy/ActiveSessionPromoLazy";
+import { FacebookPixel } from "@/components/analytics/FacebookPixel";
 import { SiteAnalyticsTracker } from "@/components/analytics/SiteAnalyticsTracker";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Navbar } from "@/components/site/Navbar";
@@ -147,6 +148,7 @@ export default async function RootLayout({
             />
             <ActiveSessionPromoLazy session={primarySession} />
             <SiteAnalyticsTracker />
+            <FacebookPixel />
           </ThemeProvider>
         </SiteSettingsProvider>
       </body>
