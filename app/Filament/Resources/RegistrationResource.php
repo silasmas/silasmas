@@ -374,15 +374,13 @@ class RegistrationResource extends Resource
         ->searchable()
         ->live()
         ->helperText('Utilisez {{lien_paiement}} dans le modèle pour le lien de reprise paiement.'),
-      Forms\Components\View::make('filament.components.academy-email-preview')
-        ->columnSpanFull()
-        ->viewData(function (Get $get) use ($previewRegistration): array {
-          return static::resolveEmailPreviewData(
-            (int) ($get('template_id') ?? 0),
-            $previewRegistration,
-            $get('training_session_id') ? (int) $get('training_session_id') : null
-          );
-        }),
+      AcademyEmailPreviewRenderer::filamentPreviewField('email_send_preview', function (Get $get) use ($previewRegistration): array {
+        return static::resolveEmailPreviewData(
+          (int) ($get('template_id') ?? 0),
+          $previewRegistration,
+          $get('training_session_id') ? (int) $get('training_session_id') : null
+        );
+      }),
     ];
   }
 

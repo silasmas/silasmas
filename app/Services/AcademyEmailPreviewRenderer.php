@@ -6,6 +6,9 @@ use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
 use App\Support\EmailBodyFormatter;
 use App\Support\FrontendUrl;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Get;
+use Illuminate\Support\HtmlString;
 
 /**
  * Génère l'aperçu HTML des e-mails Academy (conception et envoi).
@@ -15,6 +18,27 @@ class AcademyEmailPreviewRenderer
   public function __construct(
     protected AcademyEmailTemplateRenderer $templateRenderer
   ) {
+  }
+
+  /**
+   * Champ Filament d'aperçu e-mail (compatible mise à jour live).
+   *
+   * @param string $name Clé unique du champ formulaire
+   * @param callable(Get): array $resolveData Fabrique les données passées à la vue Blade
+   * @return Placeholder Composant Placeholder Filament
+   */
+  public static function filamentPreviewField(string $name, callable $resolveData): Placeholder
+  {
+    return Placeholder::make($name)
+      ->label('')
+      ->content(function (Get $get) use ($resolveData): HtmlString {
+        $data = $resolveData($get);
+
+        return new HtmlString(
+          view('filament.components.academy-email-preview', $data)->render()
+        );
+      })
+      ->columnSpanFull();
   }
 
   /**

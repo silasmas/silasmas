@@ -98,16 +98,12 @@ class AcademyEmailTemplateResource extends Resource
         Forms\Components\Section::make('Aperçu')
           ->description('Prévisualisation instantanée avec des données exemple.')
           ->schema([
-            Forms\Components\View::make('filament.components.academy-email-preview')
-              ->columnSpanFull()
-              ->viewData(function (Get $get): array {
-                $preview = app(AcademyEmailPreviewRenderer::class)->buildSamplePreviewData(
-                  (string) ($get('subject') ?? ''),
-                  (string) ($get('body') ?? '')
-                );
-
-                return $preview;
-              }),
+            AcademyEmailPreviewRenderer::filamentPreviewField('email_preview', function (Get $get): array {
+              return app(AcademyEmailPreviewRenderer::class)->buildSamplePreviewData(
+                (string) ($get('subject') ?? ''),
+                (string) ($get('body') ?? '')
+              );
+            }),
           ])
           ->collapsible(),
       ]);
