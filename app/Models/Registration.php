@@ -60,17 +60,29 @@ class Registration extends Model
   }
 
   /**
-   * Indique si l'inscription peut reprendre au paiement via lien.
+   * Indique si l'inscription doit encore finaliser un paiement (session payante).
    */
-  public function canResumePayment(): bool
+  public function needsPaymentCompletion(): bool
   {
-    if ($this->status !== 'pending_payment' || $this->hasPaidPayment()) {
+    if ($this->hasPaidPayment()) {
       return false;
     }
 
     $this->loadMissing('trainingSession');
 
-    return $this->trainingSession?->isPaid() ?? false;
+    if (! ($this->trainingSession?->isPaid() ?? false)) {
+      return false;
+    }
+
+    return ! in_array($this->status, ['cancelled', 'pre_registered'], true);
+  }
+
+  /**
+   * Indique si l'inscription peut reprendre au paiement via lien.
+   */
+  public function canResumePayment(): bool
+  {
+    return $this->needsPaymentCompletion();
   }
 
   /**
@@ -82,7 +94,10 @@ class Registration extends Model
   public function scopePaymentIncomplete(Builder $query): Builder
   {
     return $query
-      ->where('status', 'pending_payment')
+      ->whereNotIn('status', ['cancelled', 'pre_registered'])
+      ->whereHas('trainingSession', function (Builder $sessionQuery) {
+        $sessionQuery->where('is_free', false)->where('price', '>', 0);
+      })
       ->whereDoesntHave('payments', function (Builder $paymentQuery) {
         $paymentQuery->where('status', 'paid');
       });

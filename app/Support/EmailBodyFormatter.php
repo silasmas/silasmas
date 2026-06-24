@@ -22,7 +22,7 @@ class EmailBodyFormatter
       '~\bhttps?://[^\s<>"\'\]]+~i',
       function (array $matches): string {
         $raw = $matches[0];
-        $url = rtrim($raw, '.,);]\'"');
+        $url = rtrim($raw, '.,);]\'"*');
         $suffix = substr($raw, strlen($url));
         $safeUrl = htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 

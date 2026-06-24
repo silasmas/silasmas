@@ -102,7 +102,7 @@ class AcademyEmailTemplateRenderer
       '{{lien_inscription}}' => $session?->slug
         ? FrontendUrl::to("academy/{$session->slug}#inscription")
         : FrontendUrl::to('academy'),
-      '{{lien_paiement}}' => $registration->canResumePayment()
+      '{{lien_paiement}}' => $registration->needsPaymentCompletion()
         ? RegistrationPaymentResumeUrl::frontendUrl($registration)
         : ($session?->slug
           ? FrontendUrl::to("academy/{$session->slug}#inscription")

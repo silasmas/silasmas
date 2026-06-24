@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { RegistrationOpensCountdown } from "@/components/academy/RegistrationOpensCountdown";
 import { SessionPoster } from "@/components/academy/SessionPoster";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
@@ -25,10 +25,23 @@ const DISMISS_PREFIX = "sdev-academy-promo-dismissed-";
  * Indique si la promo doit être masquée sur cette route.
  *
  * @param pathname Chemin courant
- * @return true sur l'espace participant uniquement
+ * @param resumeToken Jeton de reprise paiement (?reprendre=)
+ * @return true si la modale promo ne doit pas s'afficher
  */
-function isPromoHiddenPath(pathname: string): boolean {
-  return pathname.startsWith("/academy/espace/");
+function isPromoHiddenPath(pathname: string, resumeToken?: string | null): boolean {
+  if (pathname.startsWith("/academy/espace/")) {
+    return true;
+  }
+
+  if (pathname.includes("/reprendre/")) {
+    return true;
+  }
+
+  if (resumeToken) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -233,7 +246,17 @@ function ActiveSessionPromoContent({ session }: { session: TrainingSession }) {
  * Modale d'accueil pour la session ouverte ou en pré-inscription + bouton flottant de rappel.
  */
 export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPromoProps) {
+  return (
+    <Suspense fallback={null}>
+      <ActiveSessionPromoGate session={initialSession} />
+    </Suspense>
+  );
+}
+
+function ActiveSessionPromoGate({ session: initialSession }: ActiveSessionPromoProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const resumeToken = searchParams.get("reprendre");
   const [session, setSession] = useState<TrainingSession | null>(initialSession);
 
   useEffect(() => {
@@ -269,7 +292,7 @@ export function ActiveSessionPromo({ session: initialSession }: ActiveSessionPro
     };
   }, [session?.status, session?.shows_pre_registration_page]);
 
-  if (!session || !sessionShowsPromo(session) || isPromoHiddenPath(pathname)) {
+  if (!session || !sessionShowsPromo(session) || isPromoHiddenPath(pathname, resumeToken)) {
     return null;
   }
 

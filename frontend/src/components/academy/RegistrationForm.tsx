@@ -181,7 +181,10 @@ export function RegistrationForm({
   const [resumeInfo, setResumeInfo] = useState<string | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   const searchParams = useSearchParams();
-  const resumeToken = searchParams.get("reprendre");
+  const resumeTokenRaw = searchParams.get("reprendre");
+  const resumeToken = resumeTokenRaw
+    ? decodeURIComponent(resumeTokenRaw).replace(/\*+$/g, "").trim()
+    : null;
 
   const availablePaymentChannels = useMemo(
     () => enabledPaymentChannels(session),
@@ -359,6 +362,12 @@ export function RegistrationForm({
         );
         setStep("payment");
         setResumeLoading(false);
+        window.requestAnimationFrame(() => {
+          document.getElementById("inscription")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
         return;
       }
 

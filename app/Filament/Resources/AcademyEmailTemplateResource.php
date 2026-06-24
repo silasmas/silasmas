@@ -85,7 +85,7 @@ class AcademyEmailTemplateResource extends Resource
               ->required()
               ->rows(12)
               ->columnSpanFull()
-              ->helperText('Utilisez les variables ci-dessous. Les retours à la ligne sont conservés.'),
+              ->helperText('Utilisez les variables ci-dessous telles quelles, sans les entourer de ** ou de guillemets.'),
             Forms\Components\Placeholder::make('variables_help')
               ->label('Variables disponibles')
               ->content(new HtmlString('<pre class="text-xs whitespace-pre-wrap rounded-lg bg-gray-50 p-3 dark:bg-gray-900">'.e($variableHelp).'</pre>'))

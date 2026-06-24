@@ -46,7 +46,7 @@ class AcademyRegistrationMailer
     }
 
     $rendered = $this->renderer->render($template, $registration);
-    $paymentResumeUrl = $registration->canResumePayment()
+    $paymentResumeUrl = $registration->needsPaymentCompletion()
       ? RegistrationPaymentResumeUrl::frontendUrl($registration)
       : null;
 
