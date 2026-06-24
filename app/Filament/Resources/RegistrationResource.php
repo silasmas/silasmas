@@ -234,9 +234,28 @@ class RegistrationResource extends Resource
             Forms\Components\TextInput::make('payment_url')
               ->label('URL à partager')
               ->default(fn (Registration $record): string => RegistrationPaymentResumeUrl::frontendUrl($record))
-              ->disabled()
-              ->copyable(copyMessage: 'Lien copié dans le presse-papiers')
+              ->readOnly()
+              ->extraInputAttributes(['onclick' => 'this.select();'])
+              ->helperText('Cliquez dans le champ pour tout sélectionner, ou utilisez « Copier le lien ».')
               ->columnSpanFull(),
+          ])
+          ->extraModalFooterActions([
+            Tables\Actions\Action::make('copyPaymentUrl')
+              ->label('Copier le lien')
+              ->icon('heroicon-o-clipboard-document')
+              ->color('success')
+              ->action(function (Registration $record, Tables\Actions\Action $action): void {
+                $url = RegistrationPaymentResumeUrl::frontendUrl($record);
+
+                $action->getLivewire()->js(
+                  'navigator.clipboard.writeText('.json_encode($url).')'
+                );
+
+                Notification::make()
+                  ->title('Lien copié dans le presse-papiers')
+                  ->success()
+                  ->send();
+              }),
           ])
           ->modalSubmitAction(false)
           ->modalCancelActionLabel('Fermer'),
