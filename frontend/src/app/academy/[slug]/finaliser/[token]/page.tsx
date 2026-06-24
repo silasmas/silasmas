@@ -4,7 +4,7 @@ import { PaymentFinalizeView } from "@/components/academy/PaymentFinalizeView";
 import { getSessionBySlug } from "@/lib/api";
 import { buildPageMetadata } from "@/lib/seo";
 
-interface AcademyResumePageProps {
+interface PaymentFinalizePageProps {
   params: Promise<{
     slug: string;
     token: string;
@@ -12,11 +12,11 @@ interface AcademyResumePageProps {
 }
 
 /**
- * Métadonnées SEO — alias reprise paiement (e-mails existants).
+ * Métadonnées SEO — page de finalisation paiement.
  */
 export async function generateMetadata({
   params,
-}: AcademyResumePageProps): Promise<Metadata> {
+}: PaymentFinalizePageProps): Promise<Metadata> {
   const { slug } = await params;
   const session = await getSessionBySlug(slug);
 
@@ -27,15 +27,17 @@ export async function generateMetadata({
   return buildPageMetadata({
     title: `Finaliser mon inscription — ${session.title}`,
     description: `Finalisez votre paiement pour confirmer votre place à la formation ${session.title}.`,
-    path: `/academy/${slug}/reprendre`,
+    path: `/academy/${slug}/finaliser`,
     noIndex: true,
   });
 }
 
 /**
- * Alias /reprendre/ — même page que /finaliser/ (liens e-mail historiques).
+ * Page dédiée : récapitulatif + paiement (liens e-mail).
  */
-export default async function AcademyResumePage({ params }: AcademyResumePageProps) {
+export default async function AcademyPaymentFinalizePage({
+  params,
+}: PaymentFinalizePageProps) {
   const { slug, token } = await params;
   const session = await getSessionBySlug(slug);
 

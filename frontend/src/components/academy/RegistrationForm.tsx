@@ -1,36 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AcademyPaymentStep } from "@/components/academy/AcademyPaymentStep";
 import { CountrySelect } from "@/components/form/CountrySelect";
 import { DEFAULT_COUNTRY } from "@/data/countries";
 import {
   buildParticipantUrl,
-  checkAcademyPaymentStatus,
-  getRegistrationResume,
-  processAcademyPayment,
   submitRegistration,
 } from "@/lib/api";
-import { validateMobileMoneyPhone } from "@/lib/mobile-money";
-import {
-  checkPaymentOnce,
-  MAX_MANUAL_VERIFY_ATTEMPTS,
-  pollPaymentAuto,
-} from "@/lib/payment-polling";
 import { SessionRegistrationBenefits } from "@/components/academy/SessionRegistrationBenefits";
-import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import { useRegistrationBenefits } from "@/hooks/useRegistrationBenefits";
-import {
-  buildPaymentCurrencyOptions,
-  formatSelectedPaymentTotal,
-  shouldShowCurrencyChoice,
-} from "@/lib/payment-currency";
 import { REGISTRATION_STATUS_STYLES } from "@/lib/registration-status";
 import type {
-  MobileMoneyOperator,
-  PaymentChannel,
-  PaymentCurrency,
   RegistrationPayload,
   SessionPaymentInfo,
   TrainingSession,
@@ -44,49 +27,13 @@ interface RegistrationFormProps {
 
 type WizardStep = "personal" | "profile" | "summary" | "payment" | "done";
 
-const ALL_MOBILE_OPERATORS: MobileMoneyOperator[] = [
-  "mpesa",
-  "airtel",
-  "orange",
-  "afrimoney",
-];
-
-/**
- * Retourne les opérateurs Mobile Money activés pour la session.
- */
-function enabledMobileOperators(session: TrainingSession): MobileMoneyOperator[] {
-  if (
-    session.enabled_mobile_operators &&
-    session.enabled_mobile_operators.length > 0
-  ) {
-    return session.enabled_mobile_operators.filter((operator): operator is MobileMoneyOperator =>
-      ALL_MOBILE_OPERATORS.includes(operator)
-    );
-  }
-
-  if (session.payment_mobile_money_enabled === false) {
-    return [];
-  }
-
-  return ALL_MOBILE_OPERATORS;
-}
-
-/**
- * Retourne les canaux de paiement activés (Mobile Money si au moins un opérateur).
- */
-function enabledPaymentChannels(session: TrainingSession): PaymentChannel[] {
-  const channels: PaymentChannel[] = [];
-
-  if (enabledMobileOperators(session).length > 0) {
-    channels.push("mobile_money");
-  }
-
-  if (session.payment_card_enabled !== false) {
-    channels.push("card");
-  }
-
-  return channels;
-}
+const STEP_LABELS: Record<WizardStep, string> = {
+  personal: "Identité",
+  profile: "Profil",
+  summary: "Récapitulatif",
+  payment: "Paiement",
+  done: "Terminé",
+};
 
 interface FormState {
   firstname: string;
@@ -102,21 +49,6 @@ interface FormState {
   notifySms: boolean;
   notifyWhatsapp: boolean;
 }
-
-const MOBILE_OPERATORS: { id: MobileMoneyOperator; label: string; hint: string }[] = [
-  { id: "mpesa", label: "M-Pesa", hint: "Vodacom" },
-  { id: "airtel", label: "Airtel Money", hint: "Airtel" },
-  { id: "orange", label: "Orange Money", hint: "Orange" },
-  { id: "afrimoney", label: "Afrimoney", hint: "Africell" },
-];
-
-const STEP_LABELS: Record<WizardStep, string> = {
-  personal: "Identité",
-  profile: "Profil",
-  summary: "Récapitulatif",
-  payment: "Paiement",
-  done: "Terminé",
-};
 
 const inputClassDefault =
   "w-full rounded-xl border border-line bg-bg-elev px-4 py-3.5 text-ink outline-none transition-colors focus:border-accent";
@@ -154,7 +86,7 @@ export function RegistrationForm({
   session,
   variant = "default",
 }: RegistrationFormProps) {
-  const siteSettings = useSiteSettings();
+  const router = useRouter();
   const isHero = variant === "hero";
   const inputClass = isHero ? inputClassHero : inputClassDefault;
   const cardClass = isHero
@@ -167,108 +99,20 @@ export function RegistrationForm({
 
   const [step, setStep] = useState<WizardStep>("personal");
   const [loading, setLoading] = useState(false);
-  const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<SessionPaymentInfo | null>(null);
-  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency | "">("");
-  const [channel, setChannel] = useState<PaymentChannel | "">("");
-  const [mobileOperator, setMobileOperator] = useState<MobileMoneyOperator | "">("");
-  const [phone, setPhone] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showManualVerify, setShowManualVerify] = useState(false);
-  const [verifyAttempts, setVerifyAttempts] = useState(0);
   const [participantToken, setParticipantToken] = useState<string | null>(null);
   const [resumeInfo, setResumeInfo] = useState<string | null>(null);
-  const [resumeLoading, setResumeLoading] = useState(false);
   const searchParams = useSearchParams();
   const resumeTokenRaw = searchParams.get("reprendre");
   const resumeToken = resumeTokenRaw
     ? decodeURIComponent(resumeTokenRaw).replace(/\*+$/g, "").trim()
     : null;
 
-  const availablePaymentChannels = useMemo(
-    () => enabledPaymentChannels(session),
-    [
-      session.payment_mobile_money_enabled,
-      session.payment_card_enabled,
-      session.enabled_mobile_operators,
-    ]
-  );
-  const availableMobileOperators = useMemo(
-    () =>
-      MOBILE_OPERATORS.filter((operator) =>
-        enabledMobileOperators(session).includes(operator.id)
-      ),
-    [session.enabled_mobile_operators, session.payment_mobile_money_enabled]
-  );
-  const showPaymentMethodChoice = availablePaymentChannels.length > 1;
-  const showMobileOperatorChoice = availableMobileOperators.length > 1;
-  const currencyOptions = useMemo(
-    () =>
-      paymentInfo
-        ? buildPaymentCurrencyOptions(
-            session,
-            paymentInfo,
-            siteSettings.usd_to_cdf_rate
-          )
-        : buildPaymentCurrencyOptions(session, null, siteSettings.usd_to_cdf_rate),
-    [paymentInfo, session, siteSettings.usd_to_cdf_rate]
-  );
-  const showCurrencyChoice = shouldShowCurrencyChoice(session, currencyOptions);
-  const selectedCurrencyOption = currencyOptions.find(
-    (option) => option.currency === paymentCurrency
-  );
   const benefits = useRegistrationBenefits(session.slug, session);
   const stepOrder: WizardStep[] = isPaidSession
     ? ["personal", "profile", "summary", "payment", "done"]
     : ["personal", "profile", "summary", "done"];
-
-  useEffect(() => {
-    if (step !== "payment" || availablePaymentChannels.length !== 1) {
-      return;
-    }
-
-    const onlyChannel = availablePaymentChannels[0];
-
-    if (channel !== onlyChannel) {
-      setChannel(onlyChannel);
-
-      if (onlyChannel === "card") {
-        setMobileOperator("");
-      }
-    }
-  }, [step, availablePaymentChannels, channel]);
-
-  useEffect(() => {
-    if (step !== "payment" || currencyOptions.length === 0) {
-      return;
-    }
-
-    const defaultCurrency = currencyOptions[0].currency;
-
-    if (
-      paymentCurrency === "" ||
-      !currencyOptions.some((option) => option.currency === paymentCurrency)
-    ) {
-      setPaymentCurrency(defaultCurrency);
-    }
-  }, [step, currencyOptions, paymentCurrency]);
-
-  useEffect(() => {
-    if (step !== "payment" || channel !== "mobile_money") {
-      return;
-    }
-
-    if (availableMobileOperators.length !== 1) {
-      return;
-    }
-
-    const onlyOperator = availableMobileOperators[0].id;
-
-    if (mobileOperator !== onlyOperator) {
-      setMobileOperator(onlyOperator);
-    }
-  }, [step, channel, availableMobileOperators, mobileOperator]);
 
   const initialFormState: FormState = {
     firstname: "",
@@ -288,105 +132,17 @@ export function RegistrationForm({
   const [form, setForm] = useState<FormState>(initialFormState);
 
   /**
-   * Reprend une inscription via ?reprendre=token (paiement ou espace participant).
+   * Redirige ?reprendre= vers la page dédiée de finalisation paiement.
    */
   useEffect(() => {
     if (!resumeToken) {
       return;
     }
 
-    let cancelled = false;
-
-    const resumeAccessToken = resumeToken;
-
-    async function loadResume() {
-      setResumeLoading(true);
-      setError(null);
-
-      const result = await getRegistrationResume(resumeAccessToken);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.success || !result.data) {
-        setError(result.message || "Lien de reprise invalide ou expiré.");
-        setResumeLoading(false);
-        return;
-      }
-
-      const data = result.data;
-
-      if (data.session_slug !== session.slug) {
-        setError("Ce lien correspond à une autre session de formation.");
-        setResumeLoading(false);
-        return;
-      }
-
-      const prefill = data.form;
-
-      setForm({
-        firstname: prefill.firstname ?? "",
-        lastname: prefill.lastname ?? "",
-        email: prefill.email ?? "",
-        phone: prefill.phone ?? "",
-        city: prefill.city ?? "",
-        country: prefill.country || DEFAULT_COUNTRY,
-        educationLevel: prefill.education_level ?? "",
-        motivation: prefill.motivation ?? "",
-        marketingOptIn: prefill.marketing_opt_in ?? true,
-        notifyEmail: prefill.notify_email ?? session.notify_by_email !== false,
-        notifySms: prefill.notify_sms ?? false,
-        notifyWhatsapp: prefill.notify_whatsapp ?? false,
-      });
-
-      if (prefill.phone) {
-        setPhone(prefill.phone);
-      }
-
-      const participantAccessToken =
-        data.access_token ?? data.registration?.access_token ?? null;
-
-      if (participantAccessToken) {
-        setParticipantToken(participantAccessToken);
-      }
-
-      if (
-        data.resume_action === "payment" &&
-        data.requires_payment &&
-        data.payment
-      ) {
-        setPaymentInfo(data.payment);
-        setResumeInfo(
-          "Vos informations ont été retrouvées. Finalisez votre paiement ci-dessous."
-        );
-        setStep("payment");
-        setResumeLoading(false);
-        window.requestAnimationFrame(() => {
-          document.getElementById("inscription")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        });
-        return;
-      }
-
-      if (data.resume_action === "participant_space" || data.is_paid) {
-        setResumeInfo("Vous êtes déjà inscrit(e) à cette session.");
-        setStep("done");
-        setResumeLoading(false);
-        return;
-      }
-
-      setResumeLoading(false);
-    }
-
-    void loadResume();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [resumeToken, session.slug, session.notify_by_email]);
+    router.replace(
+      `/academy/${session.slug}/finaliser/${encodeURIComponent(resumeToken)}`
+    );
+  }, [resumeToken, router, session.slug]);
 
   const priceLabel = formatSessionPrice(session);
 
@@ -406,17 +162,10 @@ export function RegistrationForm({
     setStep("personal");
     setForm(initialFormState);
     setPaymentInfo(null);
-    setChannel("");
-    setMobileOperator("");
-    setPhone("");
-    setTermsAccepted(false);
-    setShowManualVerify(false);
-    setVerifyAttempts(0);
     setParticipantToken(null);
     setResumeInfo(null);
     setError(null);
     setLoading(false);
-    setPolling(false);
   }
 
   /**
@@ -504,8 +253,6 @@ export function RegistrationForm({
         result.data.payment
       ) {
         setPaymentInfo(result.data.payment);
-        setVerifyAttempts(0);
-        setShowManualVerify(false);
         setStep("payment");
         return;
       }
@@ -532,197 +279,6 @@ export function RegistrationForm({
     }
   }
 
-  /**
-   * Confirme le paiement après polling ou relance manuelle.
-   */
-  async function runPaymentConfirmation(reference: string): Promise<boolean> {
-    const result = await checkPaymentOnce(reference);
-
-    if (result.confirmed) {
-      setStep("done");
-      setShowManualVerify(false);
-      setError(null);
-      return true;
-    }
-
-    if (result.cancelled) {
-      setError(result.message || "Paiement annulé.");
-      return false;
-    }
-
-    return false;
-  }
-
-  /**
-   * Relance manuelle (max 3 tentatives) si débit sans confirmation auto.
-   */
-  async function handleManualVerify() {
-    if (!paymentInfo?.reference) {
-      return;
-    }
-
-    if (verifyAttempts >= MAX_MANUAL_VERIFY_ATTEMPTS) {
-      setError("Nombre maximum de vérifications atteint. Contactez le support avec votre référence.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setVerifyAttempts((n) => n + 1);
-
-    try {
-      const res = await checkAcademyPaymentStatus(paymentInfo.reference);
-      const data = res.data;
-
-      if (data?.confirmed || (data?.reponse && data.status === 0)) {
-        setStep("done");
-        setShowManualVerify(false);
-        return;
-      }
-
-      if (data?.reponse === false && data.status === 1) {
-        setError(data.message || "Paiement annulé.");
-        return;
-      }
-
-      setError(
-        `Paiement non encore confirmé (tentative ${verifyAttempts + 1}/${MAX_MANUAL_VERIFY_ATTEMPTS}). ` +
-          "Attendez quelques secondes si vous venez de valider sur votre téléphone."
-      );
-      setShowManualVerify(true);
-    } catch {
-      setError("Impossible de vérifier le paiement pour le moment.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /**
-   * Lance le paiement (mobile ou carte).
-   */
-  async function handlePayment(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setShowManualVerify(false);
-    setVerifyAttempts(0);
-
-    if (!paymentInfo?.reference) {
-      setError("Référence de paiement manquante. Recommencez l'inscription.");
-      return;
-    }
-
-    if (!termsAccepted) {
-      setError("Veuillez accepter les conditions générales.");
-      return;
-    }
-
-    if (availablePaymentChannels.length === 0) {
-      setError("Aucun moyen de paiement n'est disponible pour cette session.");
-      return;
-    }
-
-    if (!channel || !availablePaymentChannels.includes(channel)) {
-      setError("Choisissez un moyen de paiement.");
-      return;
-    }
-
-    if (
-      showCurrencyChoice &&
-      currencyOptions.length > 1 &&
-      (!paymentCurrency ||
-        !currencyOptions.some((option) => option.currency === paymentCurrency))
-    ) {
-      setError("Choisissez la devise de paiement.");
-      return;
-    }
-
-    if (channel === "mobile_money") {
-      if (availableMobileOperators.length === 0) {
-        setError("Aucun opérateur Mobile Money n'est disponible pour cette session.");
-        return;
-      }
-
-      if (!mobileOperator || !enabledMobileOperators(session).includes(mobileOperator)) {
-        setError("Choisissez votre opérateur Mobile Money.");
-        return;
-      }
-
-      const phoneCheck = validateMobileMoneyPhone(phone, mobileOperator);
-
-      if (!phoneCheck.valid) {
-        setError(phoneCheck.message || "Numéro invalide.");
-        return;
-      }
-
-      if (phoneCheck.normalized) {
-        setPhone(phoneCheck.normalized);
-      }
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await processAcademyPayment({
-        reference: paymentInfo.reference,
-        channel,
-        payment_currency:
-          paymentCurrency ||
-          (currencyOptions.length === 1 ? currencyOptions[0].currency : undefined),
-        phone: channel === "mobile_money" ? phone.trim() : undefined,
-        mobile_operator:
-          channel === "mobile_money" && mobileOperator
-            ? mobileOperator
-            : undefined,
-      });
-
-      if (res.data?.type === "already_paid" || (res.success && res.data?.reponse && res.data?.status === 0)) {
-        setStep("done");
-        return;
-      }
-
-      if (!res.success || !res.data?.reponse) {
-        setError(res.message || res.data?.message || "Échec du paiement.");
-        return;
-      }
-
-      if (res.data.type === "card" && res.data.redirect_url) {
-        window.location.href = res.data.redirect_url;
-        return;
-      }
-
-      if (res.data.type === "mobile") {
-        setPolling(true);
-        const pollResult = await pollPaymentAuto(paymentInfo.reference);
-        setPolling(false);
-
-        if (pollResult.confirmed) {
-          setStep("done");
-          return;
-        }
-
-        if (pollResult.cancelled) {
-          setError(pollResult.message || "Paiement annulé.");
-          return;
-        }
-
-        const confirmed = await runPaymentConfirmation(paymentInfo.reference);
-
-        if (!confirmed) {
-          setShowManualVerify(true);
-          setError(
-            pollResult.message ||
-              "Si votre compte a été débité, cliquez sur « Vérifier mon paiement » (3 tentatives)."
-          );
-        }
-      }
-    } catch {
-      setError("Erreur réseau lors du paiement.");
-    } finally {
-      setLoading(false);
-      setPolling(false);
-    }
-  }
-
   if (!session.accepts_registrations && !resumeToken) {
     return (
       <div className="card-lg p-8 text-center text-muted">
@@ -731,10 +287,10 @@ export function RegistrationForm({
     );
   }
 
-  if (resumeLoading) {
+  if (resumeToken) {
     return (
       <div className={`${cardClass} text-center text-muted`}>
-        <p>Chargement de votre inscription…</p>
+        <p>Redirection vers la page de paiement…</p>
       </div>
     );
   }
@@ -948,239 +504,15 @@ export function RegistrationForm({
       )}
 
       {step === "payment" && paymentInfo && (
-        <form onSubmit={handlePayment} className="space-y-5">
-          {resumeInfo && (
-            <p className={`rounded-2xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.info}`}>
-              {resumeInfo}
-            </p>
-          )}
-          <div className="space-y-3">
-            {showCurrencyChoice && currencyOptions.length > 1 ? (
-              <div>
-                <p className="mb-2 text-sm font-medium text-ink">
-                  Devise de paiement *
-                </p>
-                <p className="mb-3 text-xs text-muted">
-                  Même tarif d&apos;inscription — choisissez la devise disponible
-                  sur votre compte (le montant de la session ne change pas).
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {currencyOptions.map((option) => (
-                    <button
-                      key={option.currency}
-                      type="button"
-                      className={`rounded-2xl border p-4 text-left transition ${
-                        paymentCurrency === option.currency
-                          ? "border-academy/50 bg-academy-soft"
-                          : "border-line hover:border-academy/30"
-                      }`}
-                      onClick={() => setPaymentCurrency(option.currency)}
-                    >
-                      <span className="font-semibold text-ink">
-                        {option.currency}
-                      </span>
-                      <span className="mt-1 block text-sm text-academy">
-                        {formatSelectedPaymentTotal(option)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-ink-soft">
-                Montant à payer :{" "}
-                <strong className="text-academy">
-                  {formatSelectedPaymentTotal(
-                    selectedCurrencyOption ?? currencyOptions[0]
-                  )}
-                </strong>
-              </p>
-            )}
-            <p className="text-xs text-muted">
-              Réf. {paymentInfo.reference}
-              {showCurrencyChoice && selectedCurrencyOption && (
-                <span className="mt-1 block sm:mt-0 sm:ml-2 sm:inline">
-                  Montant à débiter :{" "}
-                  <strong className="text-ink-soft">
-                    {formatSelectedPaymentTotal(selectedCurrencyOption)}
-                  </strong>
-                </span>
-              )}
-            </p>
-          </div>
-
-          {availablePaymentChannels.length === 0 ? (
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Le paiement en ligne n&apos;est pas configuré pour cette session.
-              Contactez l&apos;équipe SDev Academy.
-            </p>
-          ) : showPaymentMethodChoice ? (
-            <div>
-              <p className="mb-2 text-sm font-medium text-ink">
-                Moyen de paiement *
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {availablePaymentChannels.includes("mobile_money") && (
-                  <button
-                    type="button"
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      channel === "mobile_money"
-                        ? "border-academy/50 bg-academy-soft"
-                        : "border-line hover:border-academy/30"
-                    }`}
-                    onClick={() => setChannel("mobile_money")}
-                  >
-                    <span className="font-semibold text-ink">Mobile Money</span>
-                <span className="mt-1 block text-xs text-muted">
-                  {availableMobileOperators.map((operator) => operator.label).join(", ")}
-                </span>
-                  </button>
-                )}
-                {availablePaymentChannels.includes("card") && (
-                  <button
-                    type="button"
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      channel === "card"
-                        ? "border-academy/50 bg-academy-soft"
-                        : "border-line hover:border-academy/30"
-                    }`}
-                    onClick={() => {
-                      setChannel("card");
-                      setMobileOperator("");
-                    }}
-                  >
-                    <span className="font-semibold text-ink">Carte bancaire</span>
-                    <span className="mt-1 block text-xs text-muted">
-                      Visa, Mastercard
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-ink-soft">
-              Paiement par{" "}
-              <strong className="text-ink">
-                {availablePaymentChannels[0] === "mobile_money"
-                  ? "Mobile Money"
-                  : "carte bancaire"}
-              </strong>
-            </p>
-          )}
-
-          {channel === "mobile_money" && (
-            <>
-              {availableMobileOperators.length === 0 ? (
-                <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Aucun opérateur Mobile Money n&apos;est configuré pour cette
-                  session.
-                </p>
-              ) : showMobileOperatorChoice ? (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-ink">
-                    Opérateur *
-                  </p>
-                  <div
-                    className={`grid gap-2 ${
-                      availableMobileOperators.length >= 4
-                        ? "grid-cols-2 sm:grid-cols-4"
-                        : availableMobileOperators.length === 3
-                          ? "grid-cols-2 sm:grid-cols-3"
-                          : "grid-cols-2"
-                    }`}
-                  >
-                    {availableMobileOperators.map((op) => (
-                      <button
-                        key={op.id}
-                        type="button"
-                        className={`rounded-xl border px-3 py-3 text-center text-sm transition ${
-                          mobileOperator === op.id
-                            ? "border-academy/50 bg-academy-soft text-academy"
-                            : "border-line text-ink-soft hover:border-academy/30"
-                        }`}
-                        onClick={() => setMobileOperator(op.id)}
-                      >
-                        <span className="block font-medium">{op.label}</span>
-                        <span className="text-xs opacity-70">{op.hint}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-ink-soft">
-                  Opérateur :{" "}
-                  <strong className="text-ink">
-                    {availableMobileOperators[0]?.label}
-                  </strong>
-                </p>
-              )}
-              {availableMobileOperators.length > 0 && (
-                <>
-                  <input
-                    required
-                    placeholder="Téléphone Mobile Money (243…) *"
-                    className={inputClass}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                  <p className="text-xs text-muted">
-                    Le numéro doit commencer par 243 et correspondre à
-                    l&apos;opérateur choisi.
-                  </p>
-                </>
-              )}
-            </>
-          )}
-
-          <label className="flex items-start gap-3 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-1"
-            />
-            J&apos;accepte les conditions générales et la politique de paiement.
-          </label>
-
-          {polling && (
-            <p className={`rounded-xl border px-4 py-3 text-sm ${REGISTRATION_STATUS_STYLES.warning}`}>
-              Vérification du paiement en cours…
-            </p>
-          )}
-
-          {showManualVerify && (
-            <button
-              type="button"
-              className="btn btn-outline w-full"
-              disabled={loading || verifyAttempts >= MAX_MANUAL_VERIFY_ATTEMPTS}
-              onClick={handleManualVerify}
-            >
-              {loading
-                ? "Vérification..."
-                : `Vérifier mon paiement (${verifyAttempts}/${MAX_MANUAL_VERIFY_ATTEMPTS})`}
-            </button>
-          )}
-
-          <div className="flex justify-between gap-3">
-            <button
-              type="button"
-              className="btn btn-outline"
-              disabled={loading || polling}
-              onClick={goBack}
-            >
-              Retour
-            </button>
-            <button
-              type="submit"
-              className="btn btn-gold btn-lg"
-              disabled={
-                loading || polling || availablePaymentChannels.length === 0
-              }
-            >
-              {loading || polling ? "Traitement..." : "Payer maintenant"}
-            </button>
-          </div>
-        </form>
+        <AcademyPaymentStep
+          session={session}
+          paymentInfo={paymentInfo}
+          initialPhone={form.phone}
+          resumeInfo={resumeInfo}
+          onSuccess={() => setStep("done")}
+          onBack={goBack}
+          variant={variant}
+        />
       )}
 
       {step === "done" && (

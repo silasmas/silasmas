@@ -120,7 +120,7 @@ class AcademyEmailPreviewRenderer
   protected function sampleVariables(): array
   {
     $slug = 'vibe-coding-la-nouvelle-facon-de-developper-avec-lia';
-    $resumeUrl = FrontendUrl::to("academy/{$slug}/reprendre/exemple-jeton-apercu");
+    $resumeUrl = FrontendUrl::to("academy/{$slug}/finaliser/exemple-jeton-apercu");
 
     return [
       '{{prenom}}' => 'Marie',

@@ -33,7 +33,7 @@ function isPromoHiddenPath(pathname: string, resumeToken?: string | null): boole
     return true;
   }
 
-  if (pathname.includes("/reprendre/")) {
+  if (pathname.includes("/reprendre/") || pathname.includes("/finaliser/")) {
     return true;
   }
 
