@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademyEmailTemplateResource\Pages;
 use App\Models\AcademyEmailTemplate;
+use App\Services\AcademyEmailPreviewRenderer;
 use App\Services\AcademyEmailTemplateRenderer;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -79,18 +81,35 @@ class AcademyEmailTemplateResource extends Resource
               ->label('Objet de l\'e-mail')
               ->required()
               ->maxLength(255)
-              ->columnSpanFull(),
+              ->columnSpanFull()
+              ->live(debounce: 400),
             Forms\Components\Textarea::make('body')
               ->label('Corps du message')
               ->required()
               ->rows(12)
               ->columnSpanFull()
-              ->helperText('Utilisez les variables ci-dessous telles quelles, sans les entourer de ** ou de guillemets.'),
+              ->live(debounce: 400)
+              ->helperText('Utilisez {{lien_paiement}} pour le lien de reprise (paiement prérempli). N\'entourez pas les variables de **.'),
             Forms\Components\Placeholder::make('variables_help')
               ->label('Variables disponibles')
               ->content(new HtmlString('<pre class="text-xs whitespace-pre-wrap rounded-lg bg-gray-50 p-3 dark:bg-gray-900">'.e($variableHelp).'</pre>'))
               ->columnSpanFull(),
           ]),
+        Forms\Components\Section::make('Aperçu')
+          ->description('Prévisualisation instantanée avec des données exemple.')
+          ->schema([
+            Forms\Components\View::make('filament.components.academy-email-preview')
+              ->columnSpanFull()
+              ->viewData(function (Get $get): array {
+                $preview = app(AcademyEmailPreviewRenderer::class)->buildSamplePreviewData(
+                  (string) ($get('subject') ?? ''),
+                  (string) ($get('body') ?? '')
+                );
+
+                return $preview;
+              }),
+          ])
+          ->collapsible(),
       ]);
   }
 

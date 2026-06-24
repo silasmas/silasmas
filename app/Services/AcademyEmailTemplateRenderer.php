@@ -37,7 +37,7 @@ class AcademyEmailTemplateRenderer
       '{{devise}}' => 'Devise du paiement',
       '{{reference_paiement}}' => 'Référence du dernier paiement',
       '{{statut_paiement}}' => 'Statut du dernier paiement',
-      '{{lien_inscription}}' => 'Lien vers la page d\'inscription',
+      '{{lien_inscription}}' => 'Lien inscription (reprise paiement automatique si non payé)',
       '{{lien_paiement}}' => 'Lien direct vers l\'étape paiement (formulaire prérempli)',
       '{{lien_participant}}' => 'Lien espace participant',
       '{{statut_inscription}}' => 'Statut de l\'inscription',
@@ -56,10 +56,84 @@ class AcademyEmailTemplateRenderer
     $registration->loadMissing(['student', 'trainingSession', 'latestPayment']);
     $variables = $this->buildVariables($registration);
 
+    $subject = $this->replaceVariables(
+      $this->stripMarkdownAroundVariables($template->subject),
+      $variables
+    );
+    $body = $this->replaceVariables(
+      $this->stripMarkdownAroundVariables($template->body),
+      $variables
+    );
+    $body = $this->normalizePaymentLinks($body, $registration);
+
     return [
-      'subject' => $this->replaceVariables($template->subject, $variables),
-      'body' => $this->replaceVariables($template->body, $variables),
+      'subject' => $subject,
+      'body' => $body,
     ];
+  }
+
+  /**
+   * Retire le gras Markdown autour des variables (ex. **{{lien_paiement}}**).
+   */
+  protected function stripMarkdownAroundVariables(string $text): string
+  {
+    $cleaned = preg_replace('/\*\*(\{\{[^}]+\}\})\*\*/', '$1', $text);
+
+    return $cleaned ?? $text;
+  }
+
+  /**
+   * Remplace les liens d'inscription génériques par le lien de reprise paiement si pertinent.
+   */
+  protected function normalizePaymentLinks(string $body, Registration $registration): string
+  {
+    if (! $registration->needsPaymentCompletion()) {
+      return $body;
+    }
+
+    $session = $registration->trainingSession;
+
+    if ($session === null || empty($session->slug)) {
+      return $body;
+    }
+
+    $resumeUrl = RegistrationPaymentResumeUrl::frontendUrl($registration);
+    $slug = preg_quote($session->slug, '~');
+    $baseHost = preg_quote(parse_url(FrontendUrl::base(), PHP_URL_HOST) ?? 'silasmas.com', '~');
+
+    $patterns = [
+      '~https?://(?:www\.)?'.$baseHost.'/academy/'.$slug.'/?(?:#inscription)?\*{0,2}~i',
+      '~https?://(?:www\.)?silasmas\.com/academy/'.$slug.'/?(?:#inscription)?\*{0,2}~i',
+    ];
+
+    foreach ($patterns as $pattern) {
+      $body = preg_replace($pattern, $resumeUrl, $body) ?? $body;
+    }
+
+    $wrongLinks = [
+      FrontendUrl::to("academy/{$session->slug}#inscription"),
+      FrontendUrl::to("academy/{$session->slug}#inscription**"),
+      FrontendUrl::to("academy/{$session->slug}"),
+      rtrim(FrontendUrl::to("academy/{$session->slug}"), '/').'#inscription',
+    ];
+
+    foreach ($wrongLinks as $wrongLink) {
+      $body = str_replace($wrongLink, $resumeUrl, $body);
+    }
+
+    if (str_contains($body, '#inscription') && ! str_contains($body, '/reprendre/')) {
+      $body = preg_replace(
+        '~https?://[^\s<>"\'\]]*#inscription\*{0,2}~i',
+        $resumeUrl,
+        $body
+      ) ?? $body;
+    }
+
+    if (! str_contains($body, $resumeUrl)) {
+      $body = trim($body)."\n\n".$resumeUrl;
+    }
+
+    return $body;
   }
 
   /**
@@ -80,6 +154,14 @@ class AcademyEmailTemplateRenderer
 
     $registration->ensureAccessToken();
 
+    $resumeUrl = $registration->needsPaymentCompletion()
+      ? RegistrationPaymentResumeUrl::frontendUrl($registration)
+      : null;
+    $inscriptionUrl = $session?->slug
+      ? FrontendUrl::to("academy/{$session->slug}#inscription")
+      : FrontendUrl::to('academy');
+    $paymentLink = $resumeUrl ?? $inscriptionUrl;
+
     return [
       '{{prenom}}' => $student?->firstname ?? '',
       '{{nom}}' => $student?->lastname ?? '',
@@ -99,14 +181,8 @@ class AcademyEmailTemplateRenderer
       '{{devise}}' => $payment?->currency ?? $session?->currency ?? 'USD',
       '{{reference_paiement}}' => $payment?->reference ?? '',
       '{{statut_paiement}}' => $this->paymentStatusLabel($payment?->status),
-      '{{lien_inscription}}' => $session?->slug
-        ? FrontendUrl::to("academy/{$session->slug}#inscription")
-        : FrontendUrl::to('academy'),
-      '{{lien_paiement}}' => $registration->needsPaymentCompletion()
-        ? RegistrationPaymentResumeUrl::frontendUrl($registration)
-        : ($session?->slug
-          ? FrontendUrl::to("academy/{$session->slug}#inscription")
-          : FrontendUrl::to('academy')),
+      '{{lien_inscription}}' => $paymentLink,
+      '{{lien_paiement}}' => $paymentLink,
       '{{lien_participant}}' => ParticipantToken::frontendUrl($registration),
       '{{statut_inscription}}' => $this->registrationStatusLabel($registration->status),
     ];

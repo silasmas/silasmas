@@ -68,13 +68,20 @@ class Registration extends Model
       return false;
     }
 
-    $this->loadMissing('trainingSession');
-
-    if (! ($this->trainingSession?->isPaid() ?? false)) {
+    if (in_array($this->status, ['cancelled', 'pre_registered'], true)) {
       return false;
     }
 
-    return ! in_array($this->status, ['cancelled', 'pre_registered'], true);
+    $this->loadMissing('trainingSession');
+    $session = $this->trainingSession;
+
+    if ($session === null) {
+      return false;
+    }
+
+    $hasPrice = $session->price !== null && (float) $session->price > 0;
+
+    return $hasPrice || $session->isPaid();
   }
 
   /**
@@ -96,7 +103,15 @@ class Registration extends Model
     return $query
       ->whereNotIn('status', ['cancelled', 'pre_registered'])
       ->whereHas('trainingSession', function (Builder $sessionQuery) {
-        $sessionQuery->where('is_free', false)->where('price', '>', 0);
+        $sessionQuery->where(function (Builder $paidQuery) {
+          $paidQuery
+            ->where(function (Builder $pricedQuery) {
+              $pricedQuery->whereNotNull('price')->where('price', '>', 0);
+            })
+            ->orWhere(function (Builder $legacyPaidQuery) {
+              $legacyPaidQuery->where('is_free', false)->where('price', '>', 0);
+            });
+        });
       })
       ->whereDoesntHave('payments', function (Builder $paymentQuery) {
         $paymentQuery->where('status', 'paid');

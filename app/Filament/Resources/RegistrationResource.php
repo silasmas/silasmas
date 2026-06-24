@@ -6,11 +6,13 @@ use App\Exports\RegistrationsExport;
 use App\Filament\Resources\RegistrationResource\Pages;
 use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
+use App\Services\AcademyEmailPreviewRenderer;
 use App\Services\AcademyRegistrationMailer;
 use App\Services\RegistrationPdfExporter;
 use App\Support\RegistrationPaymentResumeUrl;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -262,7 +264,13 @@ class RegistrationResource extends Resource
         Tables\Actions\Action::make('sendEmail')
           ->label('Envoyer un e-mail')
           ->icon('heroicon-o-envelope')
-          ->form(static::emailTemplateFormSchema())
+          ->modalHeading('Envoyer un e-mail')
+          ->modalSubmitActionLabel('Confirmer et envoyer')
+          ->form(function (Registration $record): array {
+            $record->loadMissing(['student', 'trainingSession']);
+
+            return static::emailSendFormFields($record);
+          })
           ->action(function (Registration $record, array $data): void {
             static::sendTemplatedEmails(collect([$record]), (int) $data['template_id']);
           }),
@@ -270,10 +278,20 @@ class RegistrationResource extends Resource
       ])
       ->bulkActions([
         Tables\Actions\BulkActionGroup::make([
-          Tables\Actions\BulkAction::make('sendTemplatedEmail')
+        Tables\Actions\BulkAction::make('sendTemplatedEmail')
             ->label('Envoyer un e-mail')
             ->icon('heroicon-o-envelope')
-            ->form(static::emailTemplateFormSchema())
+            ->modalHeading('Envoyer un e-mail')
+            ->modalSubmitActionLabel('Confirmer et envoyer')
+            ->form(function ($records): array {
+              $preview = $records->first();
+
+              if ($preview !== null) {
+                $preview->loadMissing(['student', 'trainingSession']);
+              }
+
+              return static::emailSendFormFields($preview);
+            })
             ->action(function ($records, array $data): void {
               static::sendTemplatedEmails(collect($records), (int) $data['template_id']);
             }),
@@ -341,11 +359,12 @@ class RegistrationResource extends Resource
   }
 
   /**
-   * Schéma du formulaire de choix de modèle d'e-mail.
+   * Schéma du formulaire d'envoi avec aperçu avant confirmation.
    *
+   * @param Registration|null $previewRegistration Inscription utilisée pour l'aperçu
    * @return list<Forms\Components\Component>
    */
-  public static function emailTemplateFormSchema(): array
+  public static function emailSendFormFields(?Registration $previewRegistration = null): array
   {
     return [
       Forms\Components\Select::make('template_id')
@@ -353,8 +372,83 @@ class RegistrationResource extends Resource
         ->options(fn (): array => AcademyEmailTemplate::query()->active()->orderBy('name')->pluck('name', 'id')->all())
         ->required()
         ->searchable()
-        ->helperText('Créez ou modifiez les modèles dans « Modèles e-mails ».'),
+        ->live()
+        ->helperText('Utilisez {{lien_paiement}} dans le modèle pour le lien de reprise paiement.'),
+      Forms\Components\View::make('filament.components.academy-email-preview')
+        ->columnSpanFull()
+        ->viewData(function (Get $get) use ($previewRegistration): array {
+          return static::resolveEmailPreviewData(
+            (int) ($get('template_id') ?? 0),
+            $previewRegistration,
+            $get('training_session_id') ? (int) $get('training_session_id') : null
+          );
+        }),
     ];
+  }
+
+  /**
+   * @deprecated Utiliser emailSendFormFields()
+   * @return list<Forms\Components\Component>
+   */
+  public static function emailTemplateFormSchema(): array
+  {
+    return static::emailSendFormFields();
+  }
+
+  /**
+   * Construit les données d'aperçu e-mail pour Filament.
+   *
+   * @param int $templateId Identifiant du modèle
+   * @param Registration|null $previewRegistration Inscription cible
+   * @param int|null $sessionFilterId Filtre session (envoi groupé en-tête)
+   * @return array{subject: string, body_html: string, payment_resume_url: string|null, firstname: string}
+   */
+  public static function resolveEmailPreviewData(
+    int $templateId,
+    ?Registration $previewRegistration = null,
+    ?int $sessionFilterId = null
+  ): array {
+    if ($templateId <= 0) {
+      return [
+        'subject' => '—',
+        'body_html' => '<p class="text-sm text-gray-500">Choisissez un modèle pour voir l\'aperçu.</p>',
+        'payment_resume_url' => null,
+        'firstname' => '',
+      ];
+    }
+
+    $template = AcademyEmailTemplate::query()->find($templateId);
+
+    if ($template === null) {
+      return [
+        'subject' => '—',
+        'body_html' => '<p class="text-sm text-red-600">Modèle introuvable.</p>',
+        'payment_resume_url' => null,
+        'firstname' => '',
+      ];
+    }
+
+    $registration = $previewRegistration;
+
+    if ($registration === null) {
+      $query = Registration::query()->paymentIncomplete()->with(['student', 'trainingSession']);
+
+      if ($sessionFilterId) {
+        $query->where('training_session_id', $sessionFilterId);
+      }
+
+      $registration = $query->first();
+    } else {
+      $registration->loadMissing(['student', 'trainingSession']);
+    }
+
+    $previewRenderer = app(AcademyEmailPreviewRenderer::class);
+
+    if ($registration !== null) {
+      return $previewRenderer->buildRegistrationPreviewData($template, $registration);
+    }
+
+    return $previewRenderer->buildSamplePreviewData($template->subject, $template->body);
   }
 
   /**

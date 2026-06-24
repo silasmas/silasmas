@@ -24,13 +24,16 @@ class ListRegistrations extends ListRecords
         ->label('E-mail aux non payés')
         ->icon('heroicon-o-envelope')
         ->color('warning')
+        ->modalHeading('E-mail aux non payés')
+        ->modalSubmitActionLabel('Confirmer et envoyer')
         ->form([
           Forms\Components\Select::make('training_session_id')
             ->label('Session')
             ->options(fn (): array => TrainingSession::query()->orderBy('title')->pluck('title', 'id')->all())
             ->searchable()
+            ->live()
             ->helperText('Laissez vide pour toutes les sessions.'),
-          ...RegistrationResource::emailTemplateFormSchema(),
+          ...RegistrationResource::emailSendFormFields(),
         ])
         ->action(function (array $data): void {
           $query = Registration::query()->paymentIncomplete()->where('notify_email', true);
