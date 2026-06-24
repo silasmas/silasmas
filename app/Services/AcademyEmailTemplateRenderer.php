@@ -6,6 +6,7 @@ use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
 use App\Support\FrontendUrl;
 use App\Support\ParticipantToken;
+use App\Support\RegistrationPaymentResumeUrl;
 
 /**
  * Remplace les variables dynamiques dans les modèles d'e-mails Academy.
@@ -37,6 +38,7 @@ class AcademyEmailTemplateRenderer
       '{{reference_paiement}}' => 'Référence du dernier paiement',
       '{{statut_paiement}}' => 'Statut du dernier paiement',
       '{{lien_inscription}}' => 'Lien vers la page d\'inscription',
+      '{{lien_paiement}}' => 'Lien direct vers l\'étape paiement (formulaire prérempli)',
       '{{lien_participant}}' => 'Lien espace participant',
       '{{statut_inscription}}' => 'Statut de l\'inscription',
     ];
@@ -100,6 +102,11 @@ class AcademyEmailTemplateRenderer
       '{{lien_inscription}}' => $session?->slug
         ? FrontendUrl::to("academy/{$session->slug}#inscription")
         : FrontendUrl::to('academy'),
+      '{{lien_paiement}}' => $registration->canResumePayment()
+        ? RegistrationPaymentResumeUrl::frontendUrl($registration)
+        : ($session?->slug
+          ? FrontendUrl::to("academy/{$session->slug}#inscription")
+          : FrontendUrl::to('academy')),
       '{{lien_participant}}' => ParticipantToken::frontendUrl($registration),
       '{{statut_inscription}}' => $this->registrationStatusLabel($registration->status),
     ];

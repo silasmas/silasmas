@@ -26,6 +26,8 @@ Route::prefix('academy')->group(function () {
     Route::get('sessions', [AcademyController::class, 'sessions'])->name('academy.sessions.index');
     Route::get('sessions/{slug}', [AcademyController::class, 'showSession'])->name('academy.sessions.show');
     Route::post('register', [AcademyController::class, 'register'])->name('academy.register');
+    Route::get('registrations/resume/{token}', [AcademyController::class, 'resumeRegistration'])
+      ->name('academy.registrations.resume');
     Route::post('pre-register', [AcademyController::class, 'preRegister'])->name('academy.pre-register');
     Route::post('payments/process', [AcademyPaymentController::class, 'processPayment'])
       ->name('academy.payments.process');

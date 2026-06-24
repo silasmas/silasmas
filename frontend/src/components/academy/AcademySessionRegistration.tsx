@@ -23,7 +23,15 @@ export function AcademySessionRegistration({
       <Suspense fallback={null}>
         <PaymentReturnAlert />
       </Suspense>
-      <RegistrationForm session={session} variant={variant} />
+      <Suspense
+        fallback={
+          <div className="card-lg animate-pulse p-8 text-center text-muted">
+            Chargement du formulaire…
+          </div>
+        }
+      >
+        <RegistrationForm session={session} variant={variant} />
+      </Suspense>
     </div>
   );
 }

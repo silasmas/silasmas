@@ -223,6 +223,36 @@ export async function submitRegistration(
 }
 
 /**
+ * Reprend une inscription via jeton (formulaire prérempli, étape paiement).
+ */
+export async function getRegistrationResume(
+  token: string
+): Promise<ApiResponse<RegistrationResumeResult>> {
+  try {
+    const response = await fetch(
+      `${API_BASE}/academy/registrations/resume/${encodeURIComponent(token)}`,
+      { headers: { Accept: "application/json" } }
+    );
+
+    const json = (await response.json()) as ApiResponse<RegistrationResumeResult>;
+
+    if (!response.ok && json.success !== false) {
+      json.success = false;
+      json.message = json.message || `Erreur serveur (HTTP ${response.status}).`;
+    }
+
+    return json;
+  } catch {
+    return {
+      success: false,
+      message:
+        "Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez plus tard.",
+      data: null as unknown as RegistrationResumeResult,
+    };
+  }
+}
+
+/**
  * Envoie une pré-inscription Academy (client-side).
  */
 export async function submitPreRegistration(

@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CountrySelect } from "@/components/form/CountrySelect";
 import { DEFAULT_COUNTRY } from "@/data/countries";
 import {
   buildParticipantUrl,
   checkAcademyPaymentStatus,
+  getRegistrationResume,
   processAcademyPayment,
   submitRegistration,
 } from "@/lib/api";
@@ -177,6 +179,9 @@ export function RegistrationForm({
   const [verifyAttempts, setVerifyAttempts] = useState(0);
   const [participantToken, setParticipantToken] = useState<string | null>(null);
   const [resumeInfo, setResumeInfo] = useState<string | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const resumeToken = searchParams.get("reprendre");
 
   const availablePaymentChannels = useMemo(
     () => enabledPaymentChannels(session),
@@ -278,6 +283,101 @@ export function RegistrationForm({
   };
 
   const [form, setForm] = useState<FormState>(initialFormState);
+
+  /**
+   * Reprend une inscription via ?reprendre=token (paiement ou espace participant).
+   */
+  useEffect(() => {
+    if (!resumeToken) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const resumeAccessToken = resumeToken;
+
+    async function loadResume() {
+      setResumeLoading(true);
+      setError(null);
+
+      const result = await getRegistrationResume(resumeAccessToken);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!result.success || !result.data) {
+        setError(result.message || "Lien de reprise invalide ou expiré.");
+        setResumeLoading(false);
+        return;
+      }
+
+      const data = result.data;
+
+      if (data.session_slug !== session.slug) {
+        setError("Ce lien correspond à une autre session de formation.");
+        setResumeLoading(false);
+        return;
+      }
+
+      const prefill = data.form;
+
+      setForm({
+        firstname: prefill.firstname ?? "",
+        lastname: prefill.lastname ?? "",
+        email: prefill.email ?? "",
+        phone: prefill.phone ?? "",
+        city: prefill.city ?? "",
+        country: prefill.country || DEFAULT_COUNTRY,
+        educationLevel: prefill.education_level ?? "",
+        motivation: prefill.motivation ?? "",
+        marketingOptIn: prefill.marketing_opt_in ?? true,
+        notifyEmail: prefill.notify_email ?? session.notify_by_email !== false,
+        notifySms: prefill.notify_sms ?? false,
+        notifyWhatsapp: prefill.notify_whatsapp ?? false,
+      });
+
+      if (prefill.phone) {
+        setPhone(prefill.phone);
+      }
+
+      const participantAccessToken =
+        data.access_token ?? data.registration?.access_token ?? null;
+
+      if (participantAccessToken) {
+        setParticipantToken(participantAccessToken);
+      }
+
+      if (
+        data.resume_action === "payment" &&
+        data.requires_payment &&
+        data.payment
+      ) {
+        setPaymentInfo(data.payment);
+        setResumeInfo(
+          "Vos informations ont été retrouvées. Finalisez votre paiement ci-dessous."
+        );
+        setStep("payment");
+        setResumeLoading(false);
+        return;
+      }
+
+      if (data.resume_action === "participant_space" || data.is_paid) {
+        setResumeInfo("Vous êtes déjà inscrit(e) à cette session.");
+        setStep("done");
+        setResumeLoading(false);
+        return;
+      }
+
+      setResumeLoading(false);
+    }
+
+    void loadResume();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resumeToken, session.slug, session.notify_by_email]);
 
   const priceLabel = formatSessionPrice(session);
 
@@ -618,6 +718,14 @@ export function RegistrationForm({
     return (
       <div className="card-lg p-8 text-center text-muted">
         Les inscriptions pour cette session sont fermées.
+      </div>
+    );
+  }
+
+  if (resumeLoading) {
+    return (
+      <div className={`${cardClass} text-center text-muted`}>
+        <p>Chargement de votre inscription…</p>
       </div>
     );
   }

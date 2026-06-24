@@ -60,6 +60,20 @@ class Registration extends Model
   }
 
   /**
+   * Indique si l'inscription peut reprendre au paiement via lien.
+   */
+  public function canResumePayment(): bool
+  {
+    if ($this->status !== 'pending_payment' || $this->hasPaidPayment()) {
+      return false;
+    }
+
+    $this->loadMissing('trainingSession');
+
+    return $this->trainingSession?->isPaid() ?? false;
+  }
+
+  /**
    * Inscriptions dont le paiement n'est pas finalisé.
    *
    * @param Builder $query Requête Eloquent

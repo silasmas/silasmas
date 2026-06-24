@@ -8,6 +8,7 @@ use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
 use App\Services\AcademyRegistrationMailer;
 use App\Services\RegistrationPdfExporter;
+use App\Support\RegistrationPaymentResumeUrl;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -222,6 +223,23 @@ class RegistrationResource extends Resource
           }),
       ])
       ->actions([
+        Tables\Actions\Action::make('paymentResumeLink')
+          ->label('Lien paiement')
+          ->icon('heroicon-o-link')
+          ->color('info')
+          ->visible(fn (Registration $record): bool => $record->canResumePayment())
+          ->modalHeading('Lien de reprise — étape paiement')
+          ->modalDescription('Le participant arrive sur le formulaire avec ses informations déjà remplies, directement à l\'étape paiement.')
+          ->form([
+            Forms\Components\TextInput::make('payment_url')
+              ->label('URL à partager')
+              ->default(fn (Registration $record): string => RegistrationPaymentResumeUrl::frontendUrl($record))
+              ->disabled()
+              ->copyable(copyMessage: 'Lien copié dans le presse-papiers')
+              ->columnSpanFull(),
+          ])
+          ->modalSubmitAction(false)
+          ->modalCancelActionLabel('Fermer'),
         Tables\Actions\Action::make('sendEmail')
           ->label('Envoyer un e-mail')
           ->icon('heroicon-o-envelope')

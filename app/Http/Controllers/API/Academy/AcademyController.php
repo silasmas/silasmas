@@ -14,6 +14,7 @@ use App\Models\TrainingSession;
 use App\Services\AcademyRegistrationNotifier;
 use App\Support\AcademyPaymentPricing;
 use App\Support\ParticipantToken;
+use App\Support\RegistrationPaymentResumeUrl;
 use Illuminate\Http\Request;
 
 /**
@@ -21,6 +22,85 @@ use Illuminate\Http\Request;
  */
 class AcademyController extends BaseController
 {
+  /**
+   * Reprend une inscription via jeton (formulaire prérempli, étape paiement).
+   */
+  public function resumeRegistration(string $token)
+  {
+    $registration = Registration::query()
+      ->where('access_token', $token)
+      ->with(['student', 'trainingSession', 'payments'])
+      ->first();
+
+    if ($registration === null) {
+      return $this->handleError('Lien de reprise invalide ou expiré.', [], 404);
+    }
+
+    $session = $registration->trainingSession;
+
+    if ($session === null) {
+      return $this->handleError('Session introuvable pour cette inscription.', [], 404);
+    }
+
+    $registration->ensureAccessToken();
+    $student = $registration->student;
+
+    if ($registration->isFullyConfirmed() || ! $session->isPaid()) {
+      return $this->handleResponse([
+        'registration' => new RegistrationResource($registration),
+        'form' => $this->registrationFormPayload($registration),
+        'requires_payment' => false,
+        'payment' => null,
+        'access_token' => $registration->access_token,
+        'participant_url' => ParticipantToken::frontendUrl($registration),
+        'resume_action' => 'participant_space',
+        'session_slug' => $session->slug,
+        'is_paid' => true,
+      ], 'Inscription déjà confirmée.');
+    }
+
+    $payment = $registration->resolveOpenPayment($session);
+
+    return $this->handleResponse([
+      'registration' => new RegistrationResource($registration),
+      'form' => $this->registrationFormPayload($registration),
+      'requires_payment' => true,
+      'payment' => $this->paymentPayload($payment),
+      'access_token' => $registration->access_token,
+      'participant_url' => ParticipantToken::frontendUrl($registration),
+      'payment_resume_url' => RegistrationPaymentResumeUrl::frontendUrl($registration),
+      'resume_action' => 'payment',
+      'session_slug' => $session->slug,
+      'is_paid' => false,
+    ], 'Reprise du paiement.');
+  }
+
+  /**
+   * Données formulaire pour préremplissage frontend.
+   *
+   * @return array<string, mixed>
+   */
+  protected function registrationFormPayload(Registration $registration): array
+  {
+    $student = $registration->student;
+
+    return [
+      'firstname' => $student?->firstname ?? '',
+      'lastname' => $student?->lastname ?? '',
+      'email' => $student?->email ?? '',
+      'phone' => $student?->phone ?? '',
+      'city' => $student?->city ?? '',
+      'country' => $student?->country ?? 'RDC',
+      'education_level' => $student?->education_level ?? '',
+      'occupation' => $student?->occupation ?? '',
+      'motivation' => $registration->motivation ?? '',
+      'marketing_opt_in' => (bool) ($student?->marketing_opt_in ?? true),
+      'notify_email' => (bool) ($registration->notify_email ?? true),
+      'notify_sms' => (bool) ($registration->notify_sms ?? false),
+      'notify_whatsapp' => (bool) ($registration->notify_whatsapp ?? false),
+    ];
+  }
+
   /**
    * Liste les sessions ouvertes ou mises en avant.
    */

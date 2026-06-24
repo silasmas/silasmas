@@ -27,7 +27,7 @@ class AcademyEmailTemplateSeeder extends Seeder
       'description' => 'Rappel pour les participants inscrits dont le paiement n\'est pas terminé.',
       'body' => "Nous avons bien enregistré votre inscription à la formation « {{session_titre}} » ({{session_dates}}).\n\n"
         ."Votre paiement n'est pas encore finalisé (montant : {{montant}} {{devise}}).\n\n"
-        ."Pour confirmer votre place, merci de compléter le règlement via le lien ci-dessous :\n{{lien_inscription}}\n\n"
+        ."Pour confirmer votre place, merci de compléter le règlement via le lien ci-dessous :\n{{lien_paiement}}\n\n"
         ."Référence de paiement : {{reference_paiement}}\n\n"
         ."En cas de difficulté, répondez à cet e-mail — nous sommes là pour vous aider.",
       'is_active' => true,

@@ -112,6 +112,35 @@ export interface SessionPaymentInfo {
 
 export type RegistrationResumeAction = "payment" | "participant_space";
 
+export interface RegistrationFormPrefill {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone: string;
+  city: string;
+  country: string;
+  education_level: string;
+  occupation: string;
+  motivation: string;
+  marketing_opt_in: boolean;
+  notify_email: boolean;
+  notify_sms: boolean;
+  notify_whatsapp: boolean;
+}
+
+export interface RegistrationResumeResult {
+  registration: RegistrationResult["registration"];
+  form: RegistrationFormPrefill;
+  requires_payment: boolean;
+  payment: SessionPaymentInfo | null;
+  access_token?: string;
+  participant_url?: string;
+  payment_resume_url?: string;
+  resume_action?: RegistrationResumeAction;
+  session_slug: string;
+  is_paid?: boolean;
+}
+
 export interface RegistrationResult {
   registration: {
     id: number;
