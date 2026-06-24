@@ -367,6 +367,9 @@ class RegistrationResource extends Resource
   public static function emailSendFormFields(?Registration $previewRegistration = null): array
   {
     return [
+      Forms\Components\Hidden::make('preview_registration_id')
+        ->default($previewRegistration?->getKey())
+        ->dehydrated(false),
       Forms\Components\Select::make('template_id')
         ->label('Modèle d\'e-mail')
         ->options(fn (): array => AcademyEmailTemplate::query()->active()->orderBy('name')->pluck('name', 'id')->all())
@@ -374,14 +377,34 @@ class RegistrationResource extends Resource
         ->searchable()
         ->live()
         ->helperText('Utilisez {{lien_paiement}} dans le modèle pour le lien de reprise paiement.'),
-      AcademyEmailPreviewRenderer::filamentPreviewField('email_send_preview', function (Get $get) use ($previewRegistration): array {
+      AcademyEmailPreviewRenderer::filamentPreviewField('email_send_preview', function (Get $get): array {
+        $registrationId = (int) ($get('preview_registration_id') ?? 0);
+        $registration = static::findRegistrationForEmailPreview($registrationId);
+
         return static::resolveEmailPreviewData(
           (int) ($get('template_id') ?? 0),
-          $previewRegistration,
+          $registration,
           $get('training_session_id') ? (int) $get('training_session_id') : null
         );
       }),
     ];
+  }
+
+  /**
+   * Charge une inscription fraîche pour l'aperçu e-mail.
+   *
+   * @param int $registrationId Identifiant inscription (0 = aucun)
+   * @return Registration|null Inscription avec relations
+   */
+  public static function findRegistrationForEmailPreview(int $registrationId): ?Registration
+  {
+    if ($registrationId <= 0) {
+      return null;
+    }
+
+    return Registration::query()
+      ->with(['student', 'trainingSession', 'latestPayment', 'payments'])
+      ->find($registrationId);
   }
 
   /**
@@ -429,11 +452,7 @@ class RegistrationResource extends Resource
     $registration = $previewRegistration;
 
     if ($registration !== null && $registration->exists) {
-      $registration = Registration::query()
-        ->with(['student', 'trainingSession', 'latestPayment'])
-        ->find($registration->getKey()) ?? $registration;
-    } elseif ($registration !== null) {
-      $registration->loadMissing(['student', 'trainingSession', 'latestPayment']);
+      $registration = static::findRegistrationForEmailPreview((int) $registration->getKey());
     }
 
     if ($registration === null) {

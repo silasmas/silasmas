@@ -33,6 +33,11 @@ class AcademyEmailPreviewRenderer
     return Placeholder::make($name)
       ->label('')
       ->content(function (Get $get) use ($resolveData): HtmlString {
+        // Force la réévaluation quand le modèle ou la session change (Filament live).
+        $get('template_id');
+        $get('training_session_id');
+        $get('preview_registration_id');
+
         $data = $resolveData($get);
 
         return new HtmlString(
@@ -101,6 +106,9 @@ class AcademyEmailPreviewRenderer
       'body_html' => EmailBodyFormatter::bodyToHtml($body),
       'payment_resume_url' => $paymentResumeUrl,
       'firstname' => $registration->student?->firstname ?? '',
+      'preview_hint' => $paymentResumeUrl === null
+        ? 'Lien de reprise indisponible (inscription confirmée, annulée, déjà payée, ou session sans slug).'
+        : null,
     ];
   }
 

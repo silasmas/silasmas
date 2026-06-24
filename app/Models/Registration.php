@@ -73,28 +73,7 @@ class Registration extends Model
    */
   public function requiresPaymentResumeLink(): bool
   {
-    if ($this->hasPaidPayment()) {
-      return false;
-    }
-
-    if (in_array($this->status, ['cancelled', 'pre_registered'], true)) {
-      return false;
-    }
-
-    $this->loadMissing('trainingSession');
-    $session = $this->trainingSession;
-
-    if ($session === null || empty($session->slug)) {
-      return false;
-    }
-
-    if (in_array($this->status, ['pending_payment', 'pending'], true)) {
-      return true;
-    }
-
-    $hasPrice = $session->price !== null && (float) $session->price > 0;
-
-    return $hasPrice || $session->isPaid();
+    return $this->paymentResumeUrlOrNull() !== null;
   }
 
   /**
@@ -104,7 +83,17 @@ class Registration extends Model
    */
   public function paymentResumeUrlOrNull(): ?string
   {
-    if (! $this->requiresPaymentResumeLink()) {
+    if ($this->hasPaidPayment()) {
+      return null;
+    }
+
+    if (in_array($this->status, ['cancelled', 'pre_registered', 'confirmed'], true)) {
+      return null;
+    }
+
+    $this->loadMissing('trainingSession');
+
+    if ($this->trainingSession === null || empty($this->trainingSession->slug)) {
       return null;
     }
 
