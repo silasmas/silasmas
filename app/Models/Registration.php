@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ParticipantToken;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -56,6 +57,21 @@ class Registration extends Model
   public function latestPayment()
   {
     return $this->hasOne(SessionPayment::class)->latestOfMany();
+  }
+
+  /**
+   * Inscriptions dont le paiement n'est pas finalisé.
+   *
+   * @param Builder $query Requête Eloquent
+   * @return Builder
+   */
+  public function scopePaymentIncomplete(Builder $query): Builder
+  {
+    return $query
+      ->where('status', 'pending_payment')
+      ->whereDoesntHave('payments', function (Builder $paymentQuery) {
+        $paymentQuery->where('status', 'paid');
+      });
   }
 
   /**

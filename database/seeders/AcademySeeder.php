@@ -15,6 +15,8 @@ class AcademySeeder extends Seeder
    */
   public function run(): void
   {
+    $this->call(AcademyEmailTemplateSeeder::class);
+
     TrainingSession::query()
       ->where('slug', 'programmation-assistee-ia-2026')
       ->update(['status' => 'closed', 'is_featured' => false]);
