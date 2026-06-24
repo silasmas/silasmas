@@ -21,19 +21,40 @@ class RegistrationPdfExporter
    */
   public function export(Builder|Collection $queryOrCollection, string $title = 'Inscriptions Academy')
   {
-    if ($queryOrCollection instanceof Collection) {
-      $registrations = $queryOrCollection->load(['student', 'trainingSession', 'latestPayment']);
-    } else {
-      $registrations = $queryOrCollection
-        ->with(['student', 'trainingSession', 'latestPayment'])
-        ->orderByDesc('registered_at')
-        ->get();
-    }
+    $registrations = $this->resolveRegistrations($queryOrCollection);
 
     return Pdf::loadView('exports.registrations-pdf', [
       'title' => $title,
       'registrations' => $registrations,
       'generatedAt' => now()->locale('fr')->translatedFormat('j F Y à H:i'),
     ])->setPaper('a4', 'landscape');
+  }
+
+  /**
+   * Résout la liste d'inscriptions avec relations préchargées.
+   *
+   * @param Builder<Registration>|Collection<int, Registration> $queryOrCollection Source
+   * @return \Illuminate\Database\Eloquent\Collection<int, Registration>
+   */
+  protected function resolveRegistrations(Builder|Collection $queryOrCollection)
+  {
+    if ($queryOrCollection instanceof Builder) {
+      return $queryOrCollection
+        ->with(['student', 'trainingSession', 'latestPayment'])
+        ->orderByDesc('registered_at')
+        ->get();
+    }
+
+    $ids = $queryOrCollection->pluck('id')->filter()->values();
+
+    if ($ids->isEmpty()) {
+      return Registration::query()->whereRaw('0 = 1')->get();
+    }
+
+    return Registration::query()
+      ->whereIn('id', $ids)
+      ->with(['student', 'trainingSession', 'latestPayment'])
+      ->orderByDesc('registered_at')
+      ->get();
   }
 }

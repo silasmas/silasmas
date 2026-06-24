@@ -28,11 +28,21 @@ class RegistrationsExport implements FromCollection, ShouldAutoSize, WithHeading
    */
   public function collection(): Collection
   {
-    if ($this->queryOrCollection instanceof Collection) {
-      return $this->queryOrCollection;
+    if ($this->queryOrCollection instanceof Builder) {
+      return $this->queryOrCollection
+        ->with(['student', 'trainingSession', 'latestPayment'])
+        ->orderByDesc('registered_at')
+        ->get();
     }
 
-    return $this->queryOrCollection
+    $ids = $this->queryOrCollection->pluck('id')->filter()->values();
+
+    if ($ids->isEmpty()) {
+      return Registration::query()->whereRaw('0 = 1')->get();
+    }
+
+    return Registration::query()
+      ->whereIn('id', $ids)
       ->with(['student', 'trainingSession', 'latestPayment'])
       ->orderByDesc('registered_at')
       ->get();
