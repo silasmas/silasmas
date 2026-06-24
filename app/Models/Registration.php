@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ParticipantToken;
+use App\Support\RegistrationPaymentResumeUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -64,6 +65,14 @@ class Registration extends Model
    */
   public function needsPaymentCompletion(): bool
   {
+    return $this->requiresPaymentResumeLink();
+  }
+
+  /**
+   * Indique si un lien de reprise paiement doit être proposé (e-mail, aperçu, envoi).
+   */
+  public function requiresPaymentResumeLink(): bool
+  {
     if ($this->hasPaidPayment()) {
       return false;
     }
@@ -75,13 +84,31 @@ class Registration extends Model
     $this->loadMissing('trainingSession');
     $session = $this->trainingSession;
 
-    if ($session === null) {
+    if ($session === null || empty($session->slug)) {
       return false;
+    }
+
+    if (in_array($this->status, ['pending_payment', 'pending'], true)) {
+      return true;
     }
 
     $hasPrice = $session->price !== null && (float) $session->price > 0;
 
     return $hasPrice || $session->isPaid();
+  }
+
+  /**
+   * URL de reprise paiement ou null si non applicable.
+   *
+   * @return string|null Lien frontend /reprendre/{jeton}
+   */
+  public function paymentResumeUrlOrNull(): ?string
+  {
+    if (! $this->requiresPaymentResumeLink()) {
+      return null;
+    }
+
+    return RegistrationPaymentResumeUrl::frontendUrl($this);
   }
 
   /**

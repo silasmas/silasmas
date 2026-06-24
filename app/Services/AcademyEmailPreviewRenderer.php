@@ -6,6 +6,7 @@ use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
 use App\Support\EmailBodyFormatter;
 use App\Support\FrontendUrl;
+use App\Support\RegistrationPaymentResumeUrl;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Get;
 use Illuminate\Support\HtmlString;
@@ -55,19 +56,12 @@ class AcademyEmailPreviewRenderer
     $cleanBody = preg_replace('/\*\*(\{\{[^}]+\}\})\*\*/', '$1', $body) ?? $body;
     $renderedSubject = str_replace(array_keys($variables), array_values($variables), $cleanSubject);
     $renderedBody = str_replace(array_keys($variables), array_values($variables), $cleanBody);
-    $slug = 'vibe-coding-la-nouvelle-facon-de-developper-avec-lia';
     $resumeUrl = $variables['{{lien_paiement}}'];
 
-    $renderedBody = preg_replace(
-      '~https?://[^\s<>"\'\]]*#inscription\*{0,2}~i',
+    $renderedBody = RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
+      $renderedBody,
       $resumeUrl,
-      $renderedBody
-    ) ?? $renderedBody;
-
-    $renderedBody = str_replace(
-      FrontendUrl::to("academy/{$slug}#inscription"),
-      $resumeUrl,
-      $renderedBody
+      'vibe-coding-la-nouvelle-facon-de-developper-avec-lia'
     );
 
     return [
@@ -89,15 +83,22 @@ class AcademyEmailPreviewRenderer
     AcademyEmailTemplate $template,
     Registration $registration
   ): array {
+    $registration->loadMissing(['student', 'trainingSession', 'latestPayment']);
     $rendered = $this->templateRenderer->render($template, $registration);
-    $registration->loadMissing('student');
-    $paymentResumeUrl = $registration->needsPaymentCompletion()
-      ? \App\Support\RegistrationPaymentResumeUrl::frontendUrl($registration)
-      : null;
+    $paymentResumeUrl = $registration->paymentResumeUrlOrNull();
+    $body = $rendered['body'];
+
+    if ($paymentResumeUrl !== null) {
+      $body = RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
+        $body,
+        $paymentResumeUrl,
+        $registration->trainingSession?->slug
+      );
+    }
 
     return [
       'subject' => $rendered['subject'],
-      'body_html' => EmailBodyFormatter::bodyToHtml($rendered['body']),
+      'body_html' => EmailBodyFormatter::bodyToHtml($body),
       'payment_resume_url' => $paymentResumeUrl,
       'firstname' => $registration->student?->firstname ?? '',
     ];

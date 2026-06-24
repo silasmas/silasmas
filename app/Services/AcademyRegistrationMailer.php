@@ -46,9 +46,7 @@ class AcademyRegistrationMailer
     }
 
     $rendered = $this->renderer->render($template, $registration);
-    $paymentResumeUrl = $registration->needsPaymentCompletion()
-      ? RegistrationPaymentResumeUrl::frontendUrl($registration)
-      : null;
+    $paymentResumeUrl = $registration->paymentResumeUrlOrNull();
 
     try {
       Mail::to($student->email)->send(new AcademyTemplatedMail(

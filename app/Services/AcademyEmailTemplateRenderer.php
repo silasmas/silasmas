@@ -87,53 +87,17 @@ class AcademyEmailTemplateRenderer
    */
   protected function normalizePaymentLinks(string $body, Registration $registration): string
   {
-    if (! $registration->needsPaymentCompletion()) {
+    $resumeUrl = $registration->paymentResumeUrlOrNull();
+
+    if ($resumeUrl === null) {
       return $body;
     }
 
-    $session = $registration->trainingSession;
-
-    if ($session === null || empty($session->slug)) {
-      return $body;
-    }
-
-    $resumeUrl = RegistrationPaymentResumeUrl::frontendUrl($registration);
-    $slug = preg_quote($session->slug, '~');
-    $baseHost = preg_quote(parse_url(FrontendUrl::base(), PHP_URL_HOST) ?? 'silasmas.com', '~');
-
-    $patterns = [
-      '~https?://(?:www\.)?'.$baseHost.'/academy/'.$slug.'/?(?:#inscription)?\*{0,2}~i',
-      '~https?://(?:www\.)?silasmas\.com/academy/'.$slug.'/?(?:#inscription)?\*{0,2}~i',
-    ];
-
-    foreach ($patterns as $pattern) {
-      $body = preg_replace($pattern, $resumeUrl, $body) ?? $body;
-    }
-
-    $wrongLinks = [
-      FrontendUrl::to("academy/{$session->slug}#inscription"),
-      FrontendUrl::to("academy/{$session->slug}#inscription**"),
-      FrontendUrl::to("academy/{$session->slug}"),
-      rtrim(FrontendUrl::to("academy/{$session->slug}"), '/').'#inscription',
-    ];
-
-    foreach ($wrongLinks as $wrongLink) {
-      $body = str_replace($wrongLink, $resumeUrl, $body);
-    }
-
-    if (str_contains($body, '#inscription') && ! str_contains($body, '/reprendre/')) {
-      $body = preg_replace(
-        '~https?://[^\s<>"\'\]]*#inscription\*{0,2}~i',
-        $resumeUrl,
-        $body
-      ) ?? $body;
-    }
-
-    if (! str_contains($body, $resumeUrl)) {
-      $body = trim($body)."\n\n".$resumeUrl;
-    }
-
-    return $body;
+    return RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
+      $body,
+      $resumeUrl,
+      $registration->trainingSession?->slug
+    );
   }
 
   /**
@@ -154,9 +118,7 @@ class AcademyEmailTemplateRenderer
 
     $registration->ensureAccessToken();
 
-    $resumeUrl = $registration->needsPaymentCompletion()
-      ? RegistrationPaymentResumeUrl::frontendUrl($registration)
-      : null;
+    $resumeUrl = $registration->paymentResumeUrlOrNull();
     $inscriptionUrl = $session?->slug
       ? FrontendUrl::to("academy/{$session->slug}#inscription")
       : FrontendUrl::to('academy');

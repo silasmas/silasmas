@@ -428,6 +428,14 @@ class RegistrationResource extends Resource
 
     $registration = $previewRegistration;
 
+    if ($registration !== null && $registration->exists) {
+      $registration = Registration::query()
+        ->with(['student', 'trainingSession', 'latestPayment'])
+        ->find($registration->getKey()) ?? $registration;
+    } elseif ($registration !== null) {
+      $registration->loadMissing(['student', 'trainingSession', 'latestPayment']);
+    }
+
     if ($registration === null) {
       $query = Registration::query()->paymentIncomplete()->with(['student', 'trainingSession']);
 
@@ -436,8 +444,6 @@ class RegistrationResource extends Resource
       }
 
       $registration = $query->first();
-    } else {
-      $registration->loadMissing(['student', 'trainingSession']);
     }
 
     $previewRenderer = app(AcademyEmailPreviewRenderer::class);
