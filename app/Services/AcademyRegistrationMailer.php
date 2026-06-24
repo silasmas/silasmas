@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\AcademyTemplatedMail;
 use App\Models\AcademyEmailTemplate;
 use App\Models\Registration;
+use App\Support\RegistrationPaymentResumeUrl;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -45,12 +46,16 @@ class AcademyRegistrationMailer
     }
 
     $rendered = $this->renderer->render($template, $registration);
+    $paymentResumeUrl = $registration->canResumePayment()
+      ? RegistrationPaymentResumeUrl::frontendUrl($registration)
+      : null;
 
     try {
       Mail::to($student->email)->send(new AcademyTemplatedMail(
         $rendered['subject'],
         $rendered['body'],
-        $student->firstname
+        $student->firstname,
+        $paymentResumeUrl
       ));
 
       return true;

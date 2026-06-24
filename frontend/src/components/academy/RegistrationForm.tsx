@@ -714,7 +714,7 @@ export function RegistrationForm({
     }
   }
 
-  if (!session.accepts_registrations) {
+  if (!session.accepts_registrations && !resumeToken) {
     return (
       <div className="card-lg p-8 text-center text-muted">
         Les inscriptions pour cette session sont fermées.

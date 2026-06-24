@@ -26,6 +26,6 @@ class RegistrationPaymentResumeUrl
       return FrontendUrl::to('academy');
     }
 
-    return FrontendUrl::to("academy/{$slug}").'?reprendre='.urlencode((string) $registration->access_token);
+    return FrontendUrl::to("academy/{$slug}/reprendre/{$registration->access_token}");
   }
 }

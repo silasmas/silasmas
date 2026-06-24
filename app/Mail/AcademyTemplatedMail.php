@@ -24,7 +24,8 @@ class AcademyTemplatedMail extends Mailable
   public function __construct(
     public string $mailSubject,
     public string $mailBody,
-    public string $firstname = ''
+    public string $firstname = '',
+    public ?string $paymentResumeUrl = null
   ) {
   }
 
@@ -48,6 +49,7 @@ class AcademyTemplatedMail extends Mailable
       with: [
         'mailBody' => $this->mailBody,
         'firstname' => $this->firstname,
+        'paymentResumeUrl' => $this->paymentResumeUrl,
       ],
     );
   }

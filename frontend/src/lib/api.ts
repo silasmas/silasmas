@@ -11,6 +11,7 @@ import type {
   ParticipantSpace,
   RegistrationPayload,
   RegistrationResult,
+  RegistrationResumeResult,
   SiteContent,
   TrainingSession,
 } from "@/types/api";
@@ -230,7 +231,7 @@ export async function getRegistrationResume(
 ): Promise<ApiResponse<RegistrationResumeResult>> {
   try {
     const response = await fetch(
-      `${API_BASE}/academy/registrations/resume/${encodeURIComponent(token)}`,
+      `/api/academy/registrations/resume/${encodeURIComponent(token)}`,
       { headers: { Accept: "application/json" } }
     );
 
