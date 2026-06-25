@@ -10,10 +10,10 @@ use App\Models\Registration;
 class RegistrationPaymentResumeUrl
 {
   /**
-   * URL absolue vers le formulaire d'inscription, étape paiement préremplie.
+   * URL absolue vers la page de finalisation paiement.
    *
    * @param Registration $registration Inscription en attente de paiement
-   * @return string URL complète (ex. https://silasmas.com/academy/slug?reprendre=token)
+   * @return string URL complète (ex. https://silasmas.com/academy/slug/finaliser/token)
    */
   public static function frontendUrl(Registration $registration): string
   {
@@ -30,10 +30,21 @@ class RegistrationPaymentResumeUrl
   }
 
   /**
-   * Remplace les anciens liens #inscription par l'URL de reprise paiement.
+   * Indique si le texte contient déjà un lien de finalisation ou reprise valide.
+   */
+  public static function bodyHasPaymentResumeLink(string $body): bool
+  {
+    return (bool) preg_match(
+      '~https?://[^\s<>"\'\]]+/academy/[^/\s<>"\'\]]+/(?:finaliser|reprendre)/[A-Za-z0-9]+~i',
+      $body
+    );
+  }
+
+  /**
+   * Remplace uniquement les anciens liens #inscription (sans toucher aux URLs /finaliser/).
    *
    * @param string $body Corps du message (variables déjà remplacées)
-   * @param string $resumeUrl Lien /reprendre/{jeton}
+   * @param string $resumeUrl Lien /finaliser/{jeton}
    * @param string|null $sessionSlug Slug session pour cibler les URLs en dur
    * @return string Corps corrigé
    */
@@ -42,40 +53,53 @@ class RegistrationPaymentResumeUrl
     string $resumeUrl,
     ?string $sessionSlug = null
   ): string {
+    if (self::bodyHasPaymentResumeLink($body)) {
+      return $body;
+    }
+
     if ($sessionSlug !== null && $sessionSlug !== '') {
-      $escapedSlug = preg_quote($sessionSlug, '~');
-      $baseHost = preg_quote(parse_url(FrontendUrl::base(), PHP_URL_HOST) ?? 'silasmas.com', '~');
-
-      $patterns = [
-        '~https?://(?:www\.)?'.$baseHost.'/academy/'.$escapedSlug.'/?(?:#inscription)?\*{0,2}~i',
-        '~https?://(?:www\.)?silasmas\.com/academy/'.$escapedSlug.'/?(?:#inscription)?\*{0,2}~i',
-      ];
-
-      foreach ($patterns as $pattern) {
-        $body = preg_replace($pattern, $resumeUrl, $body) ?? $body;
-      }
-
       $wrongLinks = [
         FrontendUrl::to("academy/{$sessionSlug}#inscription"),
         FrontendUrl::to("academy/{$sessionSlug}#inscription**"),
-        FrontendUrl::to("academy/{$sessionSlug}"),
         rtrim(FrontendUrl::to("academy/{$sessionSlug}"), '/').'#inscription',
       ];
 
       foreach ($wrongLinks as $wrongLink) {
         $body = str_replace($wrongLink, $resumeUrl, $body);
       }
-    }
 
-    if (str_contains($body, '#inscription') && ! str_contains($body, '/reprendre/')) {
+      if (self::bodyHasPaymentResumeLink($body)) {
+        return $body;
+      }
+
+      $escapedSlug = preg_quote($sessionSlug, '~');
+      $baseHost = preg_quote(parse_url(FrontendUrl::base(), PHP_URL_HOST) ?? 'silasmas.com', '~');
+      $hostPattern = '(?:www\.)?(?:'.$baseHost.'|silasmas\.com)';
+
+      // Uniquement les URLs se terminant par #inscription (pas les préfixes de /finaliser/).
       $body = preg_replace(
-        '~https?://[^\s<>"\'\]]*#inscription\*{0,2}~i',
+        '~https?://'.$hostPattern.'/academy/'.$escapedSlug.'/?#inscription\*{0,2}~i',
+        $resumeUrl,
+        $body
+      ) ?? $body;
+
+      // Page session seule (sans /finaliser/ ni /reprendre/ après le slug).
+      $body = preg_replace(
+        '~https?://'.$hostPattern.'/academy/'.$escapedSlug.'/?(?![/\w#])~i',
         $resumeUrl,
         $body
       ) ?? $body;
     }
 
-    if (! str_contains($body, $resumeUrl)) {
+    if (str_contains($body, '#inscription') && ! self::bodyHasPaymentResumeLink($body)) {
+      $body = preg_replace(
+        '~https?://[^\s<>"\'\]]+#inscription\*{0,2}~i',
+        $resumeUrl,
+        $body
+      ) ?? $body;
+    }
+
+    if (! self::bodyHasPaymentResumeLink($body) && ! str_contains($body, $resumeUrl)) {
       $body = trim($body)."\n\n".$resumeUrl;
     }
 

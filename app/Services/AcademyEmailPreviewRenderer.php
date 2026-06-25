@@ -61,13 +61,16 @@ class AcademyEmailPreviewRenderer
     $cleanBody = preg_replace('/\*\*(\{\{[^}]+\}\})\*\*/', '$1', $body) ?? $body;
     $renderedSubject = str_replace(array_keys($variables), array_values($variables), $cleanSubject);
     $renderedBody = str_replace(array_keys($variables), array_values($variables), $cleanBody);
-    $resumeUrl = $variables['{{lien_paiement}}'];
 
-    $renderedBody = RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
-      $renderedBody,
-      $resumeUrl,
-      'vibe-coding-la-nouvelle-facon-de-developper-avec-lia'
-    );
+    if (! RegistrationPaymentResumeUrl::bodyHasPaymentResumeLink($renderedBody)) {
+      $renderedBody = RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
+        $renderedBody,
+        $variables['{{lien_paiement}}'],
+        'vibe-coding-la-nouvelle-facon-de-developper-avec-lia'
+      );
+    }
+
+    $resumeUrl = $variables['{{lien_paiement}}'];
 
     return [
       'subject' => $renderedSubject,
@@ -88,22 +91,12 @@ class AcademyEmailPreviewRenderer
     AcademyEmailTemplate $template,
     Registration $registration
   ): array {
-    $registration->loadMissing(['student', 'trainingSession', 'latestPayment']);
     $rendered = $this->templateRenderer->render($template, $registration);
     $paymentResumeUrl = $registration->paymentResumeUrlOrNull();
-    $body = $rendered['body'];
-
-    if ($paymentResumeUrl !== null) {
-      $body = RegistrationPaymentResumeUrl::replaceLegacyInscriptionLinks(
-        $body,
-        $paymentResumeUrl,
-        $registration->trainingSession?->slug
-      );
-    }
 
     return [
       'subject' => $rendered['subject'],
-      'body_html' => EmailBodyFormatter::bodyToHtml($body),
+      'body_html' => EmailBodyFormatter::bodyToHtml($rendered['body']),
       'payment_resume_url' => $paymentResumeUrl,
       'firstname' => $registration->student?->firstname ?? '',
       'preview_hint' => $paymentResumeUrl === null
