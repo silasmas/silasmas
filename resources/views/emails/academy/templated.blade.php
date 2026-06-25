@@ -3,12 +3,6 @@
   $brandName = $siteSettings->site_title ?? config('app.name');
 @endphp
 @component('mail::message')
-@if($firstname !== '')
-Bonjour **{{ $firstname }}**,
-@else
-Bonjour,
-@endif
-
 {!! \App\Support\EmailBodyFormatter::bodyToHtml($mailBody) !!}
 
 @if(!empty($paymentResumeUrl))

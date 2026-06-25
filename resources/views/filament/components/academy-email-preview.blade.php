@@ -16,12 +16,6 @@
 
   <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Message</p>
   <div class="prose prose-sm max-w-none text-gray-800 dark:prose-invert dark:text-gray-200">
-    @if(($firstname ?? '') !== '')
-      <p>Bonjour <strong>{{ $firstname }}</strong>,</p>
-    @else
-      <p>Bonjour,</p>
-    @endif
-
     {!! $body_html !!}
 
     @if(!empty($payment_resume_url))
