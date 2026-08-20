@@ -3,8 +3,8 @@ import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Script from "next/script";
 import { ActiveSessionPromoLazy } from "@/components/academy/ActiveSessionPromoLazy";
 import { FacebookPixel } from "@/components/analytics/FacebookPixel";
-import { GoogleAdSense } from "@/components/analytics/GoogleAdSense";
 import { SiteAnalyticsTracker } from "@/components/analytics/SiteAnalyticsTracker";
+import { ADSENSE_CLIENT_ID } from "@/lib/google-adsense";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -127,6 +127,14 @@ export default async function RootLayout({
         } as React.CSSProperties
       }
     >
+      <head>
+        {/* Google AdSense — requis dans <head> sur toutes les pages */}
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-bg text-ink">
         <JsonLd data={jsonLd} />
         <Script
@@ -150,7 +158,6 @@ export default async function RootLayout({
             <ActiveSessionPromoLazy session={primarySession} />
             <SiteAnalyticsTracker />
             <FacebookPixel />
-            <GoogleAdSense />
           </ThemeProvider>
         </SiteSettingsProvider>
       </body>
