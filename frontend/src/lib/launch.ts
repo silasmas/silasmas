@@ -1,9 +1,9 @@
 import { nav } from "@/lib/site";
 import type { TrainingSession } from "@/types/api";
 
-/** Active le mode lancement : uniquement la session Academy visible. */
+/** Active le mode lancement : uniquement la session Academy visible (désactivé par défaut). */
 export const ACADEMY_LAUNCH_MODE =
-  process.env.NEXT_PUBLIC_ACADEMY_LAUNCH_MODE !== "false";
+  process.env.NEXT_PUBLIC_ACADEMY_LAUNCH_MODE === "true";
 
 /** Slug de repli si l'API ne renvoie aucune session ouverte. */
 export const PRIMARY_SESSION_SLUG =
