@@ -75,8 +75,8 @@ export const DEFAULT_SILAS_PAGE: ResolvedSilasPage = {
     },
   ],
   banner: {
-    badge: "Conférence — Dakar, 2025",
-    title: "Penser produit, à l'échelle du continent.",
+    badge: "Depuis Dakar, 2025",
+    title: "Direction la nouvelle formation : Programmation avec l'IA — Juillet 2026.",
     image: stock.silas.speaking,
   },
   offers: [

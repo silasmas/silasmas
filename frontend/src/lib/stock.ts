@@ -16,8 +16,8 @@ export const stock = {
     workspace: u("photo-1499951360447-b19be8fe80f5", 1600),
   },
   silas: {
-    portrait: u("photo-1507003211169-0a1dd7228f2d", 1200),
-    speaking: u("photo-1591115765373-5207764f72e7", 1400),
+    portrait: "/images/silas/silas-portrait.png",
+    speaking: "/images/silas/silas-formel.png",
   },
   agence: {
     workshop: u("photo-1517048676732-d65bc937f952", 1600),

@@ -123,7 +123,7 @@ export default async function SilasPage() {
                 alt="Silas Masimango en conférence"
                 fill
                 sizes="100vw"
-                className="object-cover"
+                className="object-cover object-top"
               />
               <div
                 aria-hidden
