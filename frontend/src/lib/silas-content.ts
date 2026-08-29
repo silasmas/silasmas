@@ -75,9 +75,9 @@ export const DEFAULT_SILAS_PAGE: ResolvedSilasPage = {
     },
   ],
   banner: {
-    badge: "Depuis Dakar, 2025",
-    title: "Direction la nouvelle formation : Programmation avec l'IA — Juillet 2026.",
-    image: stock.silas.speaking,
+    badge: "Juillet 2026",
+    title: "La nouvelle formation : Programmation avec l'IA.",
+    image: null,
   },
   offers: [
     {

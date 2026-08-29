@@ -7,6 +7,7 @@ import { Eyebrow } from "@/components/site/Eyebrow";
 import { Reveal } from "@/components/site/Reveal";
 import { CTA } from "@/components/site/CTA";
 import { SilasOffers } from "@/components/site/SilasOffers";
+import { AcademyPromoGraphic } from "@/components/site/AcademyPromoGraphic";
 import { getSiteContent } from "@/lib/api";
 import { mergeSilasPage } from "@/lib/silas-content";
 
@@ -114,33 +115,25 @@ export default async function SilasPage() {
         </Container>
       </section>
 
-      {silas.banner.image && (
-        <section className="py-12 md:py-20">
-          <Container>
-            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-[28px] border border-line">
-              <Image
-                src={silas.banner.image}
-                alt="Silas Masimango en conférence"
-                fill
-                sizes="100vw"
-                className="object-cover object-top"
-              />
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/10 to-transparent"
-              />
-              <div className="absolute inset-x-6 bottom-6 md:inset-x-10 md:bottom-10">
-                <span className="inline-flex items-center rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs text-white backdrop-blur-md">
-                  {silas.banner.badge}
-                </span>
-                <h3 className="font-display mt-4 max-w-xl text-3xl tracking-tight text-white md:text-5xl">
-                  {silas.banner.title}
-                </h3>
-              </div>
+      <section className="py-12 md:py-20">
+        <Container>
+          <div className="relative aspect-[21/9] w-full overflow-hidden rounded-[28px] border border-line">
+            <AcademyPromoGraphic />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent"
+            />
+            <div className="absolute inset-x-6 bottom-6 md:inset-x-10 md:bottom-10">
+              <span className="inline-flex items-center rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs text-white backdrop-blur-md">
+                {silas.banner.badge}
+              </span>
+              <h3 className="font-display mt-4 max-w-xl text-3xl tracking-tight text-white md:text-5xl">
+                {silas.banner.title}
+              </h3>
             </div>
-          </Container>
-        </section>
-      )}
+          </div>
+        </Container>
+      </section>
 
       <section className="border-y border-line bg-bg-elev py-24 md:py-32">
         <Container>

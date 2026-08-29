@@ -285,9 +285,9 @@ class SiteBlockSeeder extends Seeder
     }
 
     SiteBlock::updateOrCreate(
-      ['group' => 'silas_banner', 'title' => 'Direction la nouvelle formation : Programmation avec l\'IA — Juillet 2026.'],
+      ['group' => 'silas_banner', 'title' => 'La nouvelle formation : Programmation avec l\'IA.'],
       [
-        'subtitle' => 'Depuis Dakar, 2025',
+        'subtitle' => 'Juillet 2026',
         'sort_order' => 0,
         'is_published' => true,
       ]
