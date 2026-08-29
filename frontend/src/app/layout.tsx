@@ -64,7 +64,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteContent = await getSiteContent();
   const settings = siteContent?.settings ?? FALLBACK_SITE_SETTINGS;
 
-  const title = `${settings.site_title} — Studio numérique & SDev Academy`;
+  const title = `${settings.site_title} — Agence numérique & SDev Academy`;
   const description = settings.footer_description ?? site.description;
 
   return {

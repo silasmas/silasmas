@@ -19,7 +19,7 @@ export const stock = {
     portrait: u("photo-1507003211169-0a1dd7228f2d", 1200),
     speaking: u("photo-1591115765373-5207764f72e7", 1400),
   },
-  studio: {
+  agence: {
     workshop: u("photo-1517048676732-d65bc937f952", 1600),
     code: u("photo-1498050108023-c5249f4df085", 1600),
     design: u("photo-1561070791-2526d30994b8", 1600),

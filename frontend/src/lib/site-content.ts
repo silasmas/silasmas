@@ -19,7 +19,7 @@ export const DEFAULT_HERO = {
   headlineAccent: "qui comptent",
   headlineSuffix: "pour l'Afrique.",
   body:
-    "Silas Masimango — consultant numérique, fondateur du studio Silas Développe et de la SDev Academy. On accompagne, on construit, on transmet.",
+    "Silas Masimango — consultant numérique, fondateur de l'agence Silas Développe et de la SDev Academy. On accompagne, on construit, on transmet.",
   image: null as string | null,
 };
 

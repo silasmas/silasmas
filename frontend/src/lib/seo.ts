@@ -6,13 +6,13 @@ export function siteBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://silasmas.com").replace(/\/$/, "");
 }
 
-/** Mots-clés SEO principaux du studio. */
+/** Mots-clés SEO principaux de l'agence. */
 export const SITE_KEYWORDS = [
   "Silas Développe",
   "SDev Academy",
   "développement web Kinshasa",
   "formation numérique RDC",
-  "studio digital Afrique",
+  "agence digitale Afrique",
   "consultant numérique",
   "Silas Masimango",
 ];

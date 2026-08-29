@@ -13,7 +13,7 @@ export const PRIMARY_SESSION_SLUG =
 /** Routes masquées (redirection vers la session active). */
 export const LAUNCH_HIDDEN_PATHS = [
   "/silas",
-  "/studio",
+  "/agence",
   "/portfolio",
   "/contact",
 ] as const;

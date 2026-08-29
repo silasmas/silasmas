@@ -13,10 +13,10 @@ import { stock } from "@/lib/stock";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Studio — Services numériques",
+  title: "Agence — Services numériques",
   description:
-    "Le studio Silas Développe : conception produit, développement web et mobile, design, marketing et IA appliquée.",
-  path: "/studio",
+    "L'agence Silas Développe : conception produit, développement web et mobile, design, marketing et IA appliquée.",
+  path: "/agence",
 });
 
 const process = [
@@ -51,7 +51,7 @@ const stack = [
   { area: "IA", items: ["OpenAI", "Vector DB", "Agents"] },
 ];
 
-export default async function StudioPage() {
+export default async function AgencePage() {
   const site = mergeSiteContent(await getSiteContent());
   const services = mapServicesForStudio(site.services);
 
@@ -59,13 +59,13 @@ export default async function StudioPage() {
     <>
       <section className="pt-12 pb-16 md:pt-20 md:pb-24">
         <Container>
-          <Eyebrow>Le studio</Eyebrow>
+          <Eyebrow>L&apos;agence</Eyebrow>
           <h1 className="font-display mt-6 max-w-5xl text-5xl leading-[1.02] tracking-tight md:text-7xl lg:text-[5.5rem]">
             Un atelier numérique pour concevoir, designer et{" "}
             <span className="italic text-accent">livrer</span>.
           </h1>
           <p className="mt-7 max-w-3xl text-lg text-muted leading-relaxed md:text-xl">
-            Le studio Silas Développe réunit des designers, des ingénieurs
+            L&apos;agence Silas Développe réunit des designers, des ingénieurs
             et des stratèges autour d&apos;une même obsession : transformer
             une vision en produit numérique réellement utilisé.
           </p>
@@ -121,7 +121,7 @@ export default async function StudioPage() {
           <div className="grid gap-4 md:grid-cols-12 md:gap-5">
             <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-line md:col-span-7 md:aspect-[16/10]">
               <Image
-                src={stock.studio.workshop}
+                src={stock.agence.workshop}
                 alt="Atelier — équipe en collaboration"
                 fill
                 sizes="(min-width: 768px) 58vw, 100vw"
@@ -143,7 +143,7 @@ export default async function StudioPage() {
             <div className="grid gap-4 md:col-span-5 md:gap-5">
               <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-line">
                 <Image
-                  src={stock.studio.code}
+                  src={stock.agence.code}
                   alt="Développement produit"
                   fill
                   sizes="(min-width: 768px) 40vw, 100vw"
@@ -152,7 +152,7 @@ export default async function StudioPage() {
               </div>
               <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-line">
                 <Image
-                  src={stock.studio.design}
+                  src={stock.agence.design}
                   alt="Design produit & branding"
                   fill
                   sizes="(min-width: 768px) 40vw, 100vw"

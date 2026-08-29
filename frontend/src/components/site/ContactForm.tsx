@@ -5,8 +5,8 @@ import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { submitContact } from "@/lib/api";
 
 const intents = [
-  "Studio — projet web ou mobile",
-  "Studio — design & branding",
+  "Agence — projet web ou mobile",
+  "Agence — design & branding",
   "Conseil 1-1 avec Silas",
   "SDev Academy — inscription",
   "Autre",

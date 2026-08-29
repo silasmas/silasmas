@@ -1,5 +1,5 @@
 import { Hero } from "@/components/site/Hero";
-import { LogosMarquee } from "@/components/site/LogosMarquee";
+import { RealisationsMarquee } from "@/components/site/RealisationsMarquee";
 import { PillarsGrid } from "@/components/site/PillarsGrid";
 import { FeaturedWork } from "@/components/site/FeaturedWork";
 import { Manifesto } from "@/components/site/Manifesto";
@@ -30,12 +30,12 @@ export default async function HomePage() {
   return (
     <>
       <Hero content={site.hero} />
-      <LogosMarquee logos={site.clientLogos} />
+      <RealisationsMarquee projects={projects} />
       <PillarsGrid />
       <FeaturedWork projects={projects} />
       <Manifesto principles={site.principles} />
       <VideoShowcase
-        eyebrow="Une journée au studio"
+        eyebrow="Une journée à l'agence"
         title="On construit pour le réel."
         description="Quelques secondes dans notre quotidien : conception, design, code, livraison."
         src={stock.video.src}

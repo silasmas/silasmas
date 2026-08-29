@@ -120,7 +120,7 @@ export function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
               <div className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 text-white">
                 <div>
                   <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-white/70">
-                    Studio · Kinshasa
+                    Agence · Kinshasa
                   </p>
                   <p className="font-display mt-1 text-2xl tracking-tight">
                     Silas Masimango
@@ -134,9 +134,9 @@ export function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
 
             <dl className="mt-4 grid grid-cols-2 gap-3">
               {[
-                { v: "8+", l: "Années" },
+                { v: "10+", l: "Années" },
                 { v: "40+", l: "Projets" },
-                { v: "12", l: "Pays" },
+                { v: "200+", l: "Clients satisfaits" },
                 { v: "300+", l: "Apprenants" },
               ].map((item) => (
                 <div

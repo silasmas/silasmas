@@ -13,18 +13,18 @@ const columns = [
     title: "Explorer",
     links: [
       { href: "/silas", label: "Silas" },
-      { href: "/studio", label: "Studio" },
+      { href: "/agence", label: "Agence" },
       { href: "/academy", label: "Academy" },
       { href: "/portfolio", label: "Portfolio" },
     ],
   },
   {
-    title: "Studio",
+    title: "Agence",
     links: [
-      { href: "/studio#produit", label: "Produits web & mobile" },
-      { href: "/studio#design", label: "Design produit" },
-      { href: "/studio#marketing", label: "Marketing & contenu" },
-      { href: "/studio#ia", label: "IA appliquée" },
+      { href: "/agence#produit", label: "Produits web & mobile" },
+      { href: "/agence#design", label: "Design produit" },
+      { href: "/agence#marketing", label: "Marketing & contenu" },
+      { href: "/agence#ia", label: "IA appliquée" },
     ],
   },
   {
@@ -60,7 +60,7 @@ export function Footer({ registrationHref }: FooterProps) {
               {launchMode
                 ? "SDev Academy — formations en ligne pour développer avec l'intelligence artificielle."
                 : (settings.footer_description
-                  ?? "Silas Développe — studio numérique, conseil et SDev Academy à Kinshasa.")}
+                  ?? "Silas Développe — agence numérique, conseil et SDev Academy à Kinshasa.")}
             </p>
             {settings.email && (
               <Link

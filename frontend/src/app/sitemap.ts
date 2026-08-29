@@ -6,7 +6,7 @@ import { siteBaseUrl } from "@/lib/seo";
 const STATIC_PATHS = [
   "",
   "/silas",
-  "/studio",
+  "/agence",
   "/portfolio",
   "/academy",
   "/contact",

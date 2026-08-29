@@ -23,7 +23,7 @@ export const DEFAULT_SILAS_PAGE: ResolvedSilasPage = {
     title: "Silas Masimango.",
     accent: "Entrepreneur numérique.",
     body:
-      "Je conseille des dirigeants, je construis des produits avec mon studio et je forme "
+      "Je conseille des dirigeants, je construis des produits avec mon agence et je forme "
       + "la prochaine génération de développeurs avec la SDev Academy. Ma conviction : "
       + "l'Afrique a besoin de ses propres bâtisseurs numériques.",
     image: stock.silas.portrait,
@@ -48,7 +48,7 @@ export const DEFAULT_SILAS_PAGE: ResolvedSilasPage = {
     {
       id: 2,
       year: "2020",
-      title: "Création du studio",
+      title: "Création de l'agence",
       body:
         "Naissance de Silas Développe : un atelier numérique pluridisciplinaire au service des entreprises africaines.",
     },
@@ -69,9 +69,9 @@ export const DEFAULT_SILAS_PAGE: ResolvedSilasPage = {
     {
       id: 5,
       year: "2026",
-      title: "Studio + Academy + Conseil",
+      title: "Agence + Academy + Conseil",
       body:
-        "Trois activités, une seule marque : conseil stratégique, studio produit et école — tout au même endroit.",
+        "Trois activités, une seule marque : conseil stratégique, agence produit et école — tout au même endroit.",
     },
   ],
   banner: {

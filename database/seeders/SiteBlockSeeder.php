@@ -20,7 +20,7 @@ class SiteBlockSeeder extends Seeder
       [
         'subtitle' => 'Édition 2026 — Kinshasa, RDC',
         'secondary_body' => 'qui comptent',
-        'body' => 'Silas Masimango — consultant numérique, fondateur du studio Silas Développe '
+        'body' => 'Silas Masimango — consultant numérique, fondateur de l\'agence Silas Développe '
           . 'et de la SDev Academy. On accompagne, on construit, on transmet.',
         'sort_order' => 0,
         'is_published' => true,
@@ -238,7 +238,7 @@ class SiteBlockSeeder extends Seeder
       [
         'subtitle' => 'Le consultant',
         'secondary_body' => 'Entrepreneur numérique.',
-        'body' => 'Je conseille des dirigeants, je construis des produits avec mon studio et je forme '
+        'body' => 'Je conseille des dirigeants, je construis des produits avec mon agence et je forme '
           . 'la prochaine génération de développeurs avec la SDev Academy. Ma conviction : '
           . 'l\'Afrique a besoin de ses propres bâtisseurs numériques.',
         'sort_order' => 0,
@@ -266,10 +266,10 @@ class SiteBlockSeeder extends Seeder
 
     $journey = [
       ['year' => '2017', 'title' => 'Premiers projets web', 'body' => 'Premières missions de développement web et mobile en RDC, principalement avec PHP, Laravel et React.'],
-      ['year' => '2020', 'title' => 'Création du studio', 'body' => 'Naissance de Silas Développe : un atelier numérique pluridisciplinaire au service des entreprises africaines.'],
+      ['year' => '2020', 'title' => 'Création de l\'agence', 'body' => 'Naissance de Silas Développe : un atelier numérique pluridisciplinaire au service des entreprises africaines.'],
       ['year' => '2023', 'title' => 'Premières formations', 'body' => 'Lancement de programmes courts pour former une nouvelle génération de développeurs et de designers.'],
       ['year' => '2025', 'title' => 'SDev Academy', 'body' => 'Ouverture officielle de l\'académie : un programme intensif de 12 semaines centré sur la programmation assistée par l\'IA.'],
-      ['year' => '2026', 'title' => 'Studio + Academy + Conseil', 'body' => 'Trois activités, une seule marque : conseil stratégique, studio produit et école — tout au même endroit.'],
+      ['year' => '2026', 'title' => 'Agence + Academy + Conseil', 'body' => 'Trois activités, une seule marque : conseil stratégique, agence produit et école — tout au même endroit.'],
     ];
 
     foreach ($journey as $index => $step) {

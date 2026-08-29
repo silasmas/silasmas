@@ -42,7 +42,7 @@ export const config = {
     "/academy",
     "/academy/",
     "/silas/:path*",
-    "/studio/:path*",
+    "/agence/:path*",
     "/portfolio/:path*",
     "/contact",
   ],

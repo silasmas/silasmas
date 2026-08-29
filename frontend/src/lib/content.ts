@@ -221,7 +221,7 @@ export const testimonials = [
   },
   {
     quote:
-      "Travailler avec le studio, c'est obtenir un partenaire qui pense produit avant de penser code. Notre application a été livrée à temps, propre et évolutive.",
+      "Travailler avec l'agence, c'est obtenir un partenaire qui pense produit avant de penser code. Notre application a été livrée à temps, propre et évolutive.",
     author: "M. Kabongo",
     role: "Directeur des opérations",
   },

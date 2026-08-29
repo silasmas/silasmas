@@ -34,14 +34,14 @@ const pillars: Pillar[] = [
     ],
   },
   {
-    id: "studio",
+    id: "agence",
     number: "02",
-    title: "Studio",
+    title: "Agence",
     tagline: "L'atelier numérique",
     description:
       "L'équipe qui conçoit, design et développe vos produits — du MVP à la mise à l'échelle.",
-    href: "/studio",
-    cta: "Découvrir le studio",
+    href: "/agence",
+    cta: "Découvrir l'agence",
     tone: "accent",
     bullets: [
       "Produits web & mobile",
@@ -82,8 +82,8 @@ export function PillarsGrid() {
             </h2>
           </div>
           <p className="max-w-md text-base text-muted md:text-lg">
-            Silas Développe est plus qu&apos;une agence : c&apos;est une marque
-            personnelle, un studio et une académie qui partagent la même
+            Silas Développe est plus qu&apos;une marque personnelle : c&apos;est
+            un consultant, une agence et une académie qui partagent la même
             obsession de la qualité.
           </p>
         </div>
