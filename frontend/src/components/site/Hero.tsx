@@ -22,7 +22,7 @@ export type HeroContent = {
  * Section hero de la page d'accueil (contenu CMS ou défaut sdev).
  */
 export function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
-  const portrait = content.image ?? stock.hero.portrait;
+  const portrait = content.image ?? stock.hero.workspace;
 
   return (
     <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-36">
@@ -107,7 +107,7 @@ export function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[28px] border border-line">
               <Image
                 src={portrait}
-                alt="Silas Masimango — au travail"
+                alt="Conception et développement de produits numériques"
                 fill
                 priority
                 sizes="(min-width: 1024px) 33vw, 100vw"
@@ -123,7 +123,7 @@ export function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
                     Agence · Kinshasa
                   </p>
                   <p className="font-display mt-1 text-2xl tracking-tight">
-                    Silas Masimango
+                    Produits numériques
                   </p>
                 </div>
                 <span className="inline-flex size-9 items-center justify-center rounded-full bg-white/15 backdrop-blur-md">
